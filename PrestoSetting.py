@@ -875,11 +875,19 @@ class SizeFilterSettingCard(ExpandSettingCard):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.addWidget(self.sizeFilterItem)
 
-        self.switchBtn.checkedChanged.connect(self.onSwitchBtnChecked)
+        self.switchBtn.checkedChanged.connect(self.onSwitchBtn)
 
-    def onSwitchBtnChecked(self):
-        self.switchBtn.setText('开' if self.switchBtn.isChecked() else '关')
-        cfg.set(cfg.IsSizeFilter, self.switchBtn.isChecked())
+    def onSwitchBtn(self):
+        self.setValue(self.switchBtn.isChecked())
+
+    def setValue(self, isChecked: bool):
+        self.switchBtn.setText('开' if isChecked else '关')
+        cfg.set(cfg.IsSizeFilter, isChecked)
+
+    def setChecked(self, isChecked: bool):
+        self.switchBtn.setChecked(isChecked)
+        self.setValue(isChecked)
+
 
 
 class TypeFilterModeItem(QWidget):
@@ -1107,11 +1115,18 @@ class TypeFilterSettingCard(ExpandSettingCard):
         self.viewLayout.addWidget(self.zipFileItem)
         self.viewLayout.addWidget(self.customTypeItem)
 
-        self.switchBtn.checkedChanged.connect(self.onSwitchBtnChecked)
+        self.switchBtn.checkedChanged.connect(self.onSwitchBtn)
 
-    def onSwitchBtnChecked(self):
-        self.switchBtn.setText('开' if self.switchBtn.isChecked() else '关')
-        cfg.set(cfg.IsTypeFilter, self.switchBtn.isChecked())
+    def onSwitchBtn(self):
+        self.setValue(self.switchBtn.isChecked())
+
+    def setValue(self, isChecked: bool):
+        self.switchBtn.setText('开' if isChecked else '关')
+        cfg.set(cfg.IsTypeFilter, isChecked)
+
+    def setChecked(self, isChecked: bool):
+        self.switchBtn.setChecked(isChecked)
+        self.setValue(isChecked)
 
 
 class FolderItem(QWidget):
@@ -1482,7 +1497,7 @@ class SettingInterface(SmoothScrollArea):
             '恢复',
             FluentFontIcon("\uebc4"),
             '恢复默认设置',
-            '重置所有参数为初始值',
+            '重置所有设置为初始值',
             self.advanceGroup
         )
         self.devCard = PushSettingCard(
@@ -1645,8 +1660,9 @@ class SettingInterface(SmoothScrollArea):
             self.scanCycleCard.setValue(10)
             self.concurrentProcessCard.setValue(3)
             self.bufSizeCard.setValue(BufSize._256)
-            self.sizeFilterCard.switchBtn.setChecked(False)
-            cfg.set(cfg.IsSizeFilter, False)
+            self.isSkipEmptyDirCard.setChecked(False)
+            self.sizeFilterCard.setChecked(False)
+            self.typeFilterCard.setChecked(False)
 
     def openConfig(self):
         w = MessageBox(
