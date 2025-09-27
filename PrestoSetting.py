@@ -168,8 +168,7 @@ class EditMenu(RoundMenu):
                 if self.parent().isReadOnly():
                     self.addActions([self.copyAct, self.selectAllAct])
                 else:
-                    self.addActions(
-                        self.action_list[:2] + self.action_list[3:])
+                    self.addActions(self.action_list[:2] + self.action_list[3:])
             else:
                 if self.parent().isReadOnly():
                     self.addAction(self.selectAllAct)
@@ -412,7 +411,6 @@ class SettingCard(QFrame):
         self.setFixedHeight(70 if content else 50)
         self.iconLabel.setFixedSize(16, 16)
 
-        # initialize layout
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.setContentsMargins(16, 0, 0, 0)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter)
@@ -490,7 +488,6 @@ class SwitchSettingCard(SettingCard):
             self.setValue(qconfig.get(configItem))
             configItem.valueChanged.connect(self.setValue)
 
-        # add switch button to layout
         self.hBoxLayout.addWidget(self.switchButton, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(16)
 
@@ -1054,16 +1051,42 @@ class TypeFilterSettingCard(ExpandSettingCard):
         self.switchBtn.setText('开' if cfg.IsTypeFilter.value else '关')
 
         self.typeFilterModeItem = TypeFilterModeItem(self)
-        self.documentItem = TypeFilterItem(cfg.IsDocument, FluentFontIcon("\ue8a5"), "文档",
-                                           ".pdf, .doc, .docx, .ppt, .pptx, .txt")
-        self.pictureItem = TypeFilterItem(cfg.IsPicture, FluentFontIcon("\ue91b"), "图片",
-                                          ".jpg, .jpeg, .png, .gif, .bmp, .svg, .webp, .avif")
-        self.audioItem = TypeFilterItem(cfg.IsAudio, FluentFontIcon("\ue8d6"), "音频",
-                                        ".mp3, .wav, .flac, .ape, .acc, .ogg, .wma")
-        self.videoItem = TypeFilterItem(cfg.IsVideo, FluentFontIcon("\ue8b2"), "视频", ".mp4, .avi, .mov, .wmv, .mkv")
-        self.applicationItem = TypeFilterItem(cfg.IsApplication, FluentFontIcon("\uecaa"), "应用",
-                                              ".exe, .dll, .msi, .bat, .cmd")
-        self.zipFileItem = TypeFilterItem(cfg.IsZipFile, FluentFontIcon("\uf012"), "压缩文件", ".zip, .rar, .7z, .iso")
+        self.documentItem = TypeFilterItem(
+            cfg.IsDocument,
+            FluentFontIcon("\ue8a5"),
+            "文档",
+            ".pdf, .doc, .docx, .ppt, .pptx, .txt"
+        )
+        self.pictureItem = TypeFilterItem(
+            cfg.IsPicture,
+            FluentFontIcon("\ue91b"),
+            "图片",
+            ".jpg, .jpeg, .png, .gif, .bmp, .svg, .webp, .avif"
+        )
+        self.audioItem = TypeFilterItem(
+            cfg.IsAudio,
+            FluentFontIcon("\ue8d6"),
+            "音频",
+            ".mp3, .wav, .flac, .ape, .acc, .ogg, .wma"
+        )
+        self.videoItem = TypeFilterItem(
+            cfg.IsVideo,
+            FluentFontIcon("\ue8b2"),
+            "视频",
+            ".mp4, .avi, .mov, .wmv, .mkv"
+        )
+        self.applicationItem = TypeFilterItem(
+            cfg.IsApplication,
+            FluentFontIcon("\uecaa"),
+            "应用",
+            ".exe, .dll, .msi, .bat, .cmd"
+        )
+        self.zipFileItem = TypeFilterItem(
+            cfg.IsZipFile,
+            FluentFontIcon("\uf012"),
+            "压缩文件",
+            ".zip, .rar, .7z, .iso"
+        )
         self.customTypeItem = CustomTypeFilterItem(self)
 
         self.__initWidget()
@@ -1331,10 +1354,19 @@ class ClearCache(QThread):
         super(ClearCache, self).__init__()
 
     def run(self):
-        if os.path.exists('./Log'):
-            subprocess.call("del /s /q Log", shell=True)
-        if os.path.exists('FastCopy2.ini'):
-            subprocess.call("del /q FastCopy2.ini", shell=True)
+        if os.path.exists("./Log"):
+            try:
+                for item in os.listdir("./Log"):
+                    item_path = os.path.join("./Log", item)
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+            except:
+                pass
+        if os.path.exists("FastCopy2.ini"):
+            try:
+                os.remove("FastCopy2.ini")
+            except:
+                pass
         self.isFinished.emit(True)
 
 
@@ -1349,12 +1381,15 @@ class SettingInterface(SmoothScrollArea):
         self.enableTransparentBackground()
         self.settingLabel = QLabel("设置", self)
         if darkdetect.isDark():
-            self.scrollWidget.setStyleSheet("background-color: rgba(39, 39, 39, 0);")
+            self.scrollWidget.setStyleSheet(
+                "background-color: rgba(39, 39, 39, 0);")
             self.settingLabel.setStyleSheet(
                 "font: 33px 'Microsoft YaHei Light'; background-color: transparent; color: white;")
         else:
-            self.scrollWidget.setStyleSheet("background-color: rgba(249, 249, 249, 0);")
-            self.settingLabel.setStyleSheet("font: 33px 'Microsoft YaHei Light'; background-color: transparent;")
+            self.scrollWidget.setStyleSheet(
+                "background-color: rgba(249, 249, 249, 0);")
+            self.settingLabel.setStyleSheet(
+                "font: 33px 'Microsoft YaHei Light'; background-color: transparent;")
 
         self.sourceGroup = SettingCardGroup('源', self.scrollWidget)
         self.actGroup = SettingCardGroup('行为', self.scrollWidget)
@@ -1368,25 +1403,29 @@ class SettingInterface(SmoothScrollArea):
             '源文件夹',
             '选择源文件夹来源',
             texts=['云上春晖', '自定义'],
-            parent=self.sourceGroup)
+            parent=self.sourceGroup
+        )
         self.autoRunCard = SwitchSettingCard(
             FluentFontIcon("\ue7e8"),
             "开机时启动",
             "",
             configItem=cfg.AutoRun,
-            parent=self.actGroup)
+            parent=self.actGroup
+        )
         self.notifyCard = SwitchSettingCard(
             FluentFontIcon("\uea8f"),
             "完成后通知",
             "",
             configItem=cfg.Notify,
-            parent=self.actGroup)
+            parent=self.actGroup
+        )
         self.cloudCard = PushSettingCard(
             '选择文件夹',
             FluentFontIcon("\ue753"),
             "云上春晖",
             cfg.get(cfg.sourceFolder),
-            self.sourceGroup)
+            self.sourceGroup
+        )
         self.customFolderCard = CustomFolderListSettingCard(
             "自定义",
             "展开选项卡以设置",
@@ -1395,58 +1434,71 @@ class SettingInterface(SmoothScrollArea):
             cfg.ScanCycle,
             FluentFontIcon("\ue916"),
             '扫描周期',
-            parent=self.performanceGroup)
+            parent=self.performanceGroup
+        )
         self.concurrentProcessCard = SpinBoxSettingCard(
             cfg.ConcurrentProcess,
             FluentFontIcon("\ue8e4"),
             '并行进程数',
-            parent=self.performanceGroup)
+            parent=self.performanceGroup
+        )
         self.bufSizeCard = OptionsSettingCard(
             cfg.BufSize,
             FluentFontIcon("\ueb05"),
             '缓冲区大小',
             texts=['32 MB', '64 MB', '128 MB', '256 MB', '512 MB', '1 GB'],
-            parent=self.performanceGroup)
-        self.infoBar = InformationBar(title="", content="以下选项会对所有任务产生直接而现实的影响",
-                                      parent=self.filterGroup)
+            parent=self.performanceGroup
+        )
+        self.infoBar = InformationBar(
+            title="",
+            content="以下选项会对所有任务产生直接而现实的影响",
+            parent=self.filterGroup
+        )
         self.isSkipEmptyDirCard = SwitchSettingCard(
             FluentFontIcon("\uecc9"),
             "跳过空文件夹",
             "不复制空文件夹及过滤后为空的文件夹",
             configItem=cfg.IsSkipEmptyDir,
-            parent=self.filterGroup)
+            parent=self.filterGroup
+        )
         self.sizeFilterCard = SizeFilterSettingCard(
             title='大小过滤',
             content='过滤大于指定大小的文件',
-            parent=self.filterGroup)
+            parent=self.filterGroup
+        )
         self.typeFilterCard = TypeFilterSettingCard(
             title='类型过滤',
             content='排除或包含指定类型的文件',
-            parent=self.filterGroup)
+            parent=self.filterGroup
+        )
         self.clearCard = PushSettingCard(
             '清除',
             FluentFontIcon("\uea99"),
             '清除缓存',
             self.getSize(),
-            self.storageGroup)
+            self.storageGroup
+        )
         self.recoverCard = PushSettingCard(
             '恢复',
             FluentFontIcon("\uebc4"),
             '恢复默认设置',
             '重置所有参数为初始值',
-            self.advanceGroup)
+            self.advanceGroup
+        )
         self.devCard = PushSettingCard(
             '打开',
             FluentFontIcon("\uec7a"),
             '开发者选项',
             '打开配置文件',
-            self.advanceGroup)
+            self.advanceGroup
+        )
         self.helpCard = PrimaryPushSettingCard(
             '转到帮助',
             FluentFontIcon("\uea6b"),
             '帮助',
             '提示与常见问题',
-            self.advanceGroup)
+            self.advanceGroup
+        )
         self.__initWidget()
 
     def __initWidget(self):
@@ -1496,11 +1548,11 @@ class SettingInterface(SmoothScrollArea):
 
     def getSize(self):
         try:
-            size = os.path.getsize('FastCopy2.ini')
+            size = os.path.getsize("FastCopy2.ini")
         except:
             size = 0
-        if os.path.exists('./Log'):
-            for root, dirs, files in os.walk('./Log'):
+        if os.path.exists("./Log"):
+            for root, dirs, files in os.walk("./Log"):
                 try:
                     size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
                 except:
@@ -1568,7 +1620,8 @@ class SettingInterface(SmoothScrollArea):
         w = MessageBox(
             '清除缓存',
             '缓存包含日志文件。点击确定以继续。',
-            self.window())
+            self.window()
+        )
         w.yesButton.setText('确定')
         w.cancelButton.setText('取消')
         if w.exec():
@@ -1582,7 +1635,8 @@ class SettingInterface(SmoothScrollArea):
         w = MessageBox(
             '恢复默认设置',
             '点击确定以重置所有设置为默认值。',
-            self.window())
+            self.window()
+        )
         w.yesButton.setText('确定')
         w.cancelButton.setText('取消')
         if w.exec():
@@ -1598,7 +1652,8 @@ class SettingInterface(SmoothScrollArea):
         w = MessageBox(
             '打开配置文件',
             '随意修改配置文件可能导致程序异常。点击确定以继续。',
-            self.window())
+            self.window()
+        )
         w.yesButton.setText('确定')
         w.cancelButton.setText('取消')
         if w.exec():
@@ -1774,9 +1829,11 @@ class CustomTypeMessageBox(MessageBoxBase):
         self.emptyLabel = QLabel('没有要显示的内容', self.scrollContent)
         self.emptyLabel.setAlignment(Qt.AlignCenter)
         if darkdetect.isDark():
-            self.emptyLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #999999;")
+            self.emptyLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #999999;")
         else:
-            self.emptyLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #777777;")
+            self.emptyLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #777777;")
         self.emptyLabel.setHidden(True)
         self.scrollLayout.addWidget(self.emptyLabel, 0, Qt.AlignCenter)
 
@@ -1872,25 +1929,29 @@ class AboutInterface(SmoothScrollArea):
             FluentFontIcon("\ue946"),
             '关于 Presto',
             f'版本 {VERSION}',
-            self.aboutGroup)
+            self.aboutGroup
+        )
         self.aboutBSCard = PushSettingCard(
             '了解更多',
             FluentFontIcon("\ue77b"),
             '关于作者',
             'BUG STUDIO',
-            self.aboutGroup)
+            self.aboutGroup
+        )
         self.helpCard = PrimaryPushSettingCard(
             '转到帮助',
             FluentFontIcon("\uea6b"),
             '帮助',
             '提示与常见问题',
-            self.aboutGroup)
+            self.aboutGroup
+        )
         self.feedbackCard = PrimaryPushSettingCard(
             '提供反馈',
             FluentFontIcon("\ued15"),
             '反馈',
             '报告问题或提出建议',
-            self.aboutGroup)
+            self.aboutGroup
+        )
         self.__initWidget()
 
     def __initWidget(self):
@@ -2057,13 +2118,11 @@ class FluentTitleBar(TitleBar):
         self.hBoxLayout.removeWidget(self.maxBtn)
         self.hBoxLayout.removeWidget(self.closeBtn)
 
-        # add window icon
         self.iconLabel = QLabel(self)
         self.iconLabel.setFixedSize(18, 18)
         self.hBoxLayout.insertWidget(0, self.iconLabel, 0, Qt.AlignLeft | Qt.AlignVCenter)
         self.window().windowIconChanged.connect(self.setIcon)
 
-        # add title label
         self.titleLabel = QLabel(self)
         self.hBoxLayout.insertWidget(1, self.titleLabel, 0, Qt.AlignLeft | Qt.AlignVCenter)
         self.titleLabel.setObjectName('titleLabel')
@@ -2187,23 +2246,34 @@ class Main(MSFluentWindow):
         self.aboutInterface = AboutInterface(self)
         self.homeInterface.setObjectName('homeInterface')
         self.aboutInterface.setObjectName('aboutInterface')
-        self.addSubInterface(self.homeInterface, FluentFontIcon("\ue713"), '设置', FluentFontIcon("\uf8b0"))
+        self.addSubInterface(
+            self.homeInterface,
+            FluentFontIcon("\ue713"),
+            '设置',
+            FluentFontIcon("\uf8b0")
+        )
         self.navigationInterface.addItem(
             routeKey='Log',
             icon=FluentFontIcon("\ue8a5"),
             text='日志',
             onClick=self.onLogBtn,
             selectable=False,
-            position=NavigationItemPosition.TOP, )
+            position=NavigationItemPosition.TOP
+        )
         self.navigationInterface.addItem(
             routeKey='Help',
             icon=FluentFontIcon("\uea6b"),
             text='帮助',
             onClick=self.onHelpBtn,
             selectable=False,
-            position=NavigationItemPosition.BOTTOM, )
-        self.addSubInterface(self.aboutInterface, FluentFontIcon("\ue946"), '关于', FluentFontIcon("\uf167"),
-                             NavigationItemPosition.BOTTOM)
+            position=NavigationItemPosition.BOTTOM
+        )
+        self.addSubInterface(
+            self.aboutInterface,
+            FluentFontIcon("\ue946"),
+            '关于', FluentFontIcon("\uf167"),
+            NavigationItemPosition.BOTTOM
+        )
         self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 
         self.splashScreen.finish()
@@ -2223,7 +2293,8 @@ class Main(MSFluentWindow):
 
 if __name__ == '__main__':
     with Mutex():
-        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
         if darkdetect.isDark():

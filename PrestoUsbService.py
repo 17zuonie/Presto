@@ -13,17 +13,16 @@ from PyQt5.QtCore import Qt, QPoint, QTimer, QDate, QRectF, QPropertyAnimation, 
     QEasingCurve, QEvent, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QLabel, QStackedWidget, QWidget, QGridLayout, \
     QFrame, QPushButton, QSpinBox, QLineEdit, QAction
-from qfluentwidgets import setTheme, Theme, isDarkTheme, CheckBox, PrimaryPushButton, PushButton, \
-    SubtitleLabel, Pivot, TransparentToolButton, RoundMenu, BodyLabel, CaptionLabel, Action, \
-    TransparentPushButton, setThemeColor, PrimarySplitPushButton, ZhDatePicker, MaskDialogBase, \
-    MenuAnimationType, setFont, ToolTipFilter, ToolTipPosition, ProgressRing, TextWrap, FluentFontIconBase
+from qfluentwidgets import setTheme, Theme, isDarkTheme, CheckBox, PrimaryPushButton, PushButton, SubtitleLabel, \
+    Pivot, TransparentToolButton, RoundMenu, BodyLabel, CaptionLabel, Action, TransparentPushButton, setThemeColor, \
+    PrimarySplitPushButton, ZhDatePicker, MaskDialogBase, MenuAnimationType, setFont, ToolTipFilter, ToolTipPosition, \
+    ProgressRing, TextWrap, FluentFontIconBase
 from qframelesswindow.titlebar import MinimizeButton, CloseButton, MaximizeButton
 from qframelesswindow import TitleBarButton
 from qfluentwidgets.common.style_sheet import FluentStyleSheet, themeColor
 from qfluentwidgets.components.widgets.spin_box import SpinButton, SpinIcon
 from qframelesswindow.utils import startSystemMove
 from qframelesswindow import FramelessDialog
-
 
 if sys.platform == 'win32' and sys.getwindowsversion().build >= 22000:
     from FramelessWindow import AcrylicWindow as Window
@@ -131,7 +130,6 @@ class TitleBar(TitleBarBase):
         super().__init__(parent)
         self.hBoxLayout = QHBoxLayout(self)
 
-        # add buttons to layout
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
@@ -253,7 +251,6 @@ class MessageBoxBase(MaskDialogBase):
 
 
 class UiErrorDialog:
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -331,7 +328,6 @@ class UiErrorDialog:
 
 
 class ErrorDialog(FramelessDialog, UiErrorDialog):
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -500,10 +496,10 @@ class SpinBoxBase:
 
         path = QPainterPath()
         w, h = self.width(), self.height()
-        path.addRoundedRect(QRectF(0, h-10, w, 10), 5, 5)
+        path.addRoundedRect(QRectF(0, h - 10, w, 10), 5, 5)
 
         rectPath = QPainterPath()
-        rectPath.addRect(0, h-10, w, 8)
+        rectPath.addRect(0, h - 10, w, 8)
         path = path.subtracted(rectPath)
 
         painter.fillPath(path, themeColor())
@@ -618,6 +614,7 @@ class OptionInterface(QWidget):
         self.dili = CheckBox('地理', self)
         self.jishu = CheckBox('技术', self)
         self.ziliao = CheckBox('资料', self)
+
         self.yuwen.setChecked(True)
         self.shuxue.setChecked(True)
         self.yingyu.setChecked(True)
@@ -629,6 +626,7 @@ class OptionInterface(QWidget):
         self.dili.setChecked(True)
         self.jishu.setChecked(True)
         self.ziliao.setChecked(True)
+
         self.yuwen.stateChanged.connect(self.updateSlectAll)
         self.shuxue.stateChanged.connect(self.updateSlectAll)
         self.yingyu.stateChanged.connect(self.updateSlectAll)
@@ -645,6 +643,7 @@ class OptionInterface(QWidget):
         self.lowSyncAction = QAction(FluentFontIcon("\ue8be").icon(), '同步 (低占用)')
         self.latelyCopyAction = QAction(FluentFontIcon("\ue81c").icon(), '复制 (最近文件)')
         self.dateCopyAction = QAction(FluentFontIcon("\uec92").icon(), '复制 (从时间戳)')
+
         self.exeMenu = RoundMenu(parent=self)
         self.exeMenu.addAction(self.syncAction)
         self.exeMenu.addAction(self.lowSyncAction)
@@ -657,9 +656,12 @@ class OptionInterface(QWidget):
         self.exeBtn.setFixedWidth(145)
         self.exitBtn.setFixedWidth(145)
 
-        self.exeBtn.clicked.connect(lambda: self.onSyncAction("/speed=full", False, '1'))
-        self.syncAction.triggered.connect(lambda: self.onSyncAction("/speed=full", False, '1'))
-        self.lowSyncAction.triggered.connect(lambda: self.onSyncAction("/low_io", False, '2'))
+        self.exeBtn.clicked.connect(
+            lambda: self.onSyncAction("/speed=full", False, '1'))
+        self.syncAction.triggered.connect(
+            lambda: self.onSyncAction("/speed=full", False, '1'))
+        self.lowSyncAction.triggered.connect(
+            lambda: self.onSyncAction("/low_io", False, '2'))
         self.latelyCopyAction.triggered.connect(self.onLatelyCopyAction)
         self.dateCopyAction.triggered.connect(self.onDateCopyAction)
 
@@ -670,6 +672,7 @@ class OptionInterface(QWidget):
         self.checkLayout.setHorizontalSpacing(40)
         self.checkLayout.setVerticalSpacing(12)
         self.checkLayout.setContentsMargins(30, 0, 10, 20)
+
         self.checkLayout.addWidget(self.backBtn, 0, 0, 1, 1)
         self.checkLayout.addWidget(self.slectAll, 0, 2, 1, 1)
         self.checkLayout.addWidget(self.yuwen, 1, 0, 1, 1)
@@ -755,6 +758,7 @@ class OptionInterface(QWidget):
             self.dili.setChecked(True)
             self.jishu.setChecked(True)
             self.ziliao.setChecked(True)
+
         elif self.slectAll.checkState() == Qt.Unchecked:
             self.yuwen.setChecked(False)
             self.shuxue.setChecked(False)
@@ -767,6 +771,7 @@ class OptionInterface(QWidget):
             self.dili.setChecked(False)
             self.jishu.setChecked(False)
             self.ziliao.setChecked(False)
+
         elif self.slectAll.checkState() == Qt.PartiallyChecked:
             if self.num() == 0:
                 self.slectAll.setCheckState(Qt.Checked)
@@ -781,6 +786,7 @@ class OptionInterface(QWidget):
                 self.dili.setChecked(True)
                 self.jishu.setChecked(True)
                 self.ziliao.setChecked(True)
+
             elif self.num() == 11:
                 self.slectAll.setCheckState(Qt.Unchecked)
                 self.yuwen.setChecked(False)
@@ -870,7 +876,11 @@ class OptionInterface(QWidget):
     def onLatelyCopyAction(self):
         w = LatelyCopyMessageBox(self.window())
         if w.exec():
-            self.onSyncAction(f"/from_date=-{w.spinBox.value()}D", w.deleteCheckBox.isChecked(), '3')
+            self.onSyncAction(
+                f"/from_date=-{w.spinBox.value()}D",
+                w.deleteCheckBox.isChecked(),
+                '3'
+            )
             sys.exit()
 
     def onDateCopyAction(self):
@@ -885,7 +895,11 @@ class OptionInterface(QWidget):
             if w.fromDate.date > w.toDate.date:
                 w.fromDate.setDate(w.toDate.date)
 
-            self.onSyncAction(f"/from_date={w.fromDate.date.toString('yyyyMMdd')} /to_date={w.toDate.date.toString('yyyyMMdd')}", w.deleteCheckBox.isChecked(), '4')
+            self.onSyncAction(
+                f"/from_date={w.fromDate.date.toString('yyyyMMdd')} /to_date={w.toDate.date.toString('yyyyMMdd')}",
+                w.deleteCheckBox.isChecked(),
+                '4'
+            )
             sys.exit()
 
 
@@ -1066,18 +1080,22 @@ class MainWindow(MicaWindow):
         self.isClicked = True
         self.stackedWidget.setCurrentWidget(self.optionInterface)
         self.pivot.setCurrentItem(self.optionInterface.objectName())
-        self.pivot.currentItemChanged.connect(lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k)))
+        self.pivot.currentItemChanged.connect(
+            lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k)))
         self.setFixedSize(360, 300)
-        self.move(self.desktop.width() - self.width() - 20, self.desktop.height() - self.height() - 60)
+        self.move(self.desktop.width() - self.width() - 20,
+                  self.desktop.height() - self.height() - 60)
         self.optionInterface.aniGroup.start()
 
     def onBackBtn(self):
         self.isClicked = True
         self.stackedWidget.setCurrentWidget(self.askInterface)
         self.pivot.setCurrentItem(self.askInterface.objectName())
-        self.pivot.currentItemChanged.connect(lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k)))
+        self.pivot.currentItemChanged.connect(
+            lambda k: self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k)))
         self.setFixedSize(360, 145)
-        self.move(self.desktop.width() - self.width() - 20, self.desktop.height() - self.height() - 60)
+        self.move(self.desktop.width() - self.width() - 20,
+                  self.desktop.height() - self.height() - 60)
 
 
 if __name__ == '__main__':
@@ -1088,7 +1106,8 @@ if __name__ == '__main__':
     except:
         sys.exit()
 
-    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     if darkdetect.isDark():

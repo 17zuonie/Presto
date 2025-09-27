@@ -16,13 +16,12 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QHBoxLayout, QWid
     QLineEdit, QAction, QFrame
 from qfluentwidgets import setTheme, Theme, isDarkTheme, setThemeColor, FluentStyleSheet, TransparentToolButton, \
     RoundMenu, EditableComboBox, HyperlinkButton, PrimaryPushButton, themeColor, PushButton, InfoBar, InfoBarIcon, \
-    InfoBarPosition, setFont, LineEditButton, MenuAnimationType, TransparentPushButton, ToolTipFilter, ToolTipPosition, \
-    BodyLabel, TextWrap, FluentFontIconBase
+    InfoBarPosition, setFont, LineEditButton, MenuAnimationType, TransparentPushButton, ToolTipFilter, BodyLabel, \
+    ToolTipPosition, TextWrap, FluentFontIconBase
 from qfluentwidgets.components.widgets.combo_box import ComboItem, ComboBoxMenu
 from qfluentwidgets.components.widgets.line_edit import CompleterMenu
 from qframelesswindow import FramelessDialog
 from qframelesswindow import TitleBar
-
 
 if sys.platform == 'win32' and sys.getwindowsversion().build >= 22000:
     from FramelessWindow import AcrylicWindow as Window
@@ -62,7 +61,6 @@ class FluentFontIcon(FluentFontIconBase):
 
 
 class UiErrorDialog:
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -140,7 +138,6 @@ class UiErrorDialog:
 
 
 class ErrorDialog(FramelessDialog, UiErrorDialog):
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -438,16 +435,13 @@ class LineEdit(QLineEdit):
         if not self.completer() or not self.text():
             return
 
-        # create menu
         if not self._completerMenu:
             self.setCompleterMenu(CompleterMenu(self))
 
-        # add menu items
         self.completer().setCompletionPrefix(self.text())
         changed = self._completerMenu.setCompletion(self.completer().completionModel())
         self._completerMenu.setMaxVisibleItems(self.completer().maxVisibleItems())
 
-        # show menu
         if changed:
             self._completerMenu.popup()
 
@@ -466,11 +460,11 @@ class LineEdit(QLineEdit):
 
         m = self.contentsMargins()
         path = QPainterPath()
-        w, h = self.width()-m.left()-m.right(), self.height()
-        path.addRoundedRect(QRectF(m.left(), h-10, w, 10), 5, 5)
+        w, h = self.width() - m.left() - m.right(), self.height()
+        path.addRoundedRect(QRectF(m.left(), h - 10, w, 10), 5, 5)
 
         rectPath = QPainterPath()
-        rectPath.addRect(m.left(), h-10, w, 8)
+        rectPath.addRect(m.left(), h - 10, w, 8)
         path = path.subtracted(rectPath)
 
         painter.fillPath(path, self.focusedBorderColor())
@@ -740,7 +734,6 @@ class ComboBoxBase:
             action.setEnabled(item.isEnabled)
             menu.addAction(action)
 
-        # fixes issue #468
         menu.view.itemClicked.connect(lambda i: self._onItemClicked(self.findText(i.text().lstrip())))
 
         if menu.view.width() < self.width():
@@ -752,12 +745,11 @@ class ComboBoxBase:
         menu.closedSignal.connect(self._onDropMenuClosed)
         self.dropMenu = menu
 
-        # set the selected item
         if self.currentIndex() >= 0 and self.items:
             menu.setDefaultAction(menu.actions()[self.currentIndex()])
 
         # determine the animation type by choosing the maximum height of view
-        x = -menu.width()//2 + menu.layout().contentsMargins().left() + self.width()//2
+        x = -menu.width() // 2 + menu.layout().contentsMargins().left() + self.width() // 2
         pd = self.mapToGlobal(QPoint(x, self.height()))
         hd = menu.view.heightForAnimation(pd, MenuAnimationType.DROP_DOWN)
 
@@ -900,7 +892,8 @@ class Window(MicaWindow):
         self.setWindowTitle('Presto 启动台')
         self.setWindowIcon(QIcon(':/icon.png'))
         self.setFixedSize(400, 200)
-        self.move(QApplication.screens()[0].size().width() // 2 - self.width() // 2, QApplication.screens()[0].size().height() // 2 - self.height() // 2)
+        self.move(QApplication.screens()[0].size().width() // 2 - self.width() // 2,
+                  QApplication.screens()[0].size().height() // 2 - self.height() // 2)
 
         self.usbScanBtn = TransparentPushButton(self)
         self.usbScanBtn.setText('U盘扫描')
@@ -1100,7 +1093,8 @@ class Window(MicaWindow):
 
 if __name__ == '__main__':
     with Mutex():
-        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
         if darkdetect.isDark():

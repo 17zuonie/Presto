@@ -25,7 +25,6 @@ from qframelesswindow.utils import startSystemMove
 from qframelesswindow import FramelessDialog
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
 
-
 if sys.platform == 'win32' and sys.getwindowsversion().build >= 22000:
     from FramelessWindow import AcrylicWindow as Window
 else:
@@ -127,7 +126,6 @@ class TitleBar(TitleBarBase):
         super().__init__(parent)
         self.hBoxLayout = QHBoxLayout(self)
 
-        # add buttons to layout
         self.hBoxLayout.setSpacing(0)
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.hBoxLayout.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
@@ -186,7 +184,6 @@ class MicaWindow(Window):
 
 
 class EjectUsbInfoBar(QFrame):
-
     closedSignal = pyqtSignal()
     _desktopView = None
 
@@ -319,12 +316,13 @@ class UiDetailDialog:
         self.tableView.verticalHeader().hide()
         self.tableView.setEnabled(False)
         self.tableView.setHorizontalHeaderLabels(['选项', '参数'])
+
         self.tableView.setItem(0, 0, QTableWidgetItem('目标驱动器'))
         self.tableView.setItem(0, 1, QTableWidgetItem(drive + '\\'))
         self.tableView.setItem(1, 0, QTableWidgetItem('模式'))
         self.tableView.setItem(1, 1, QTableWidgetItem(mode))
         self.tableView.setItem(2, 0, QTableWidgetItem('学科'))
-        self.tableView.setItem(2, 1, QTableWidgetItem(subject[:len(subject)-2]))
+        self.tableView.setItem(2, 1, QTableWidgetItem(subject[:len(subject) - 2]))
         self.tableView.setItem(3, 0, QTableWidgetItem('命令行选项'))
         self.tableView.setItem(3, 1, QTableWidgetItem(commandOption))
         self.tableView.setItem(4, 0, QTableWidgetItem('缓冲区大小'))
@@ -398,7 +396,6 @@ class DetailDialog(FramelessDialog, UiDetailDialog):
 
 
 class UiErrorDialog:
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -476,7 +473,6 @@ class UiErrorDialog:
 
 
 class ErrorDialog(FramelessDialog, UiErrorDialog):
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -509,7 +505,10 @@ class DeleteThread(QThread):
 
     def run(self):
         if self.isRunning:
-            args = "fcp.exe /cmd=delete " + f"/bufsize={buf} /log=FALSE " + f'/force_start={concurrentProcess} "{destFolder}"'
+            args = ("fcp.exe /cmd=delete " +
+                    f"/bufsize={buf} /log=FALSE " +
+                    f'/force_start={concurrentProcess} "{destFolder}"'
+                    )
             if os.path.exists('fcp.exe'):
                 self.process = subprocess.Popen(args, shell=True)
                 self.process.wait()
@@ -569,7 +568,9 @@ class SyncThread(QThread):
                 elif currentTask == 11:
                     currentFolder = cfg.ziliaoFolder.value
 
-                args = f'fcp.exe /cmd=sync /log=FALSE /no_confirm_stop /error_stop=FALSE /bufsize={buf} /force_start={concurrentProcess} {commandOption} "' + currentFolder.replace('/', '\\') + f'" /to="{destFolder}"'
+                args = (f'fcp.exe /cmd=sync /log=FALSE /no_confirm_stop /error_stop=FALSE ' +
+                        f'/bufsize={buf} /force_start={concurrentProcess} {commandOption} "' +
+                        currentFolder.replace('/', '\\') + f'" /to="{destFolder}"')
                 if os.path.exists('fcp.exe'):
                     self.process = subprocess.Popen(args, shell=True)
                     self.process.wait()
@@ -645,13 +646,15 @@ class MainWindow(MicaWindow):
         self.move(QApplication.screens()[0].size().width() // 2 - self.width() // 2 - randint(0, 50),
                   QApplication.screens()[0].size().height() // 2 - self.height() // 2 - randint(0, 50))
 
-        self.displayText = {1:"同步 (默认)", 2:"同步 (低占用)", 3:"复制 (最近文件)", 4:"复制 (从时间戳)"}[mode]
+        self.displayText = {1: "同步 (默认)", 2: "同步 (低占用)", 3: "复制 (最近文件)", 4: "复制 (从时间戳)"}[mode]
         if mode == 3 or mode == 4:
             self.displayText += ' - '
             self.displayText += "删除原有文件" if isDelete else "保留原有文件"
         self.subject = ""
         for i in taskList:
-            self.subject += {1: '语文', 2: '数学', 3: '英语', 4: '物理', 5: '化学', 6: '生物', 7: '政治', 8: '历史', 9: '地理', 10: '技术', 11: '资料'}[i] + '; '
+            self.subject += \
+            {1: '语文', 2: '数学', 3: '英语', 4: '物理', 5: '化学', 6: '生物', 7: '政治', 8: '历史', 9: '地理',
+             10: '技术', 11: '资料'}[i] + '; '
 
         self.titleBar.closeBtn.clicked.connect(self.onCancelBtn)
 
@@ -813,6 +816,7 @@ class MainWindow(MicaWindow):
             self.topLayout.removeWidget(self.pauseBtn)
         except:
             pass
+
         self.progressBar.deleteLater()
         self.inProgressBar.deleteLater()
         self.progressLabel.deleteLater()
@@ -821,7 +825,7 @@ class MainWindow(MicaWindow):
         self.cancelBtn.deleteLater()
         self.pauseBtn.deleteLater()
 
-        self.statusLabel.setText({1:"同步完成", 2:"同步完成", 3:"复制完成", 4:"复制完成"}[mode])
+        self.statusLabel.setText({1: "同步完成", 2: "同步完成", 3: "复制完成", 4: "复制完成"}[mode])
         self.detailLabel.setText(self.driveName)
         self.finishBtn.setVisible(True)
         self.viewBtn.setVisible(True)

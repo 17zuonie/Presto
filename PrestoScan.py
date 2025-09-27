@@ -12,7 +12,7 @@ from psutil import disk_partitions
 from webbrowser import open as WebOpen
 from win32api import GetVolumeInformation
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPropertyAnimation, QEvent, QRunnable, QThreadPool, QObject
-from PyQt5.QtGui import QIcon, QCursor, QColor, QPainter
+from PyQt5.QtGui import QIcon, QColor, QPainter
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMainWindow, QAction, QFrame, QLabel, QVBoxLayout, \
     QGraphicsOpacityEffect, QGridLayout, QHBoxLayout
 from qfluentwidgets import RoundMenu, setTheme, Theme, InfoBarPosition, IndeterminateProgressRing, FluentStyleSheet, \
@@ -53,7 +53,6 @@ class FluentFontIcon(FluentFontIconBase):
 
 
 class UiErrorDialog:
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -131,7 +130,6 @@ class UiErrorDialog:
 
 
 class ErrorDialog(FramelessDialog, UiErrorDialog):
-
     yesSignal = pyqtSignal()
     cancelSignal = pyqtSignal()
 
@@ -152,7 +150,6 @@ class ErrorDialog(FramelessDialog, UiErrorDialog):
 
 
 class EjectUsbInfoBar(QFrame):
-
     closedSignal = pyqtSignal()
     _desktopView = None
 
@@ -295,7 +292,6 @@ class EjectUsbInfoBar(QFrame):
 
 
 class ScanThread(QThread):
-
     listChanged = pyqtSignal(bool)
 
     def __init__(self, parent=None):
@@ -345,7 +341,8 @@ class ScanThread(QThread):
     def run(self):
         while self.isRunning:
             self.now_number = self.update()
-            if self.now_number > self.before_number and len(set(self.local_letter + self.mobile_letter).difference(set(self.before_letter))) == 1:
+            if self.now_number > self.before_number and len(
+                    set(self.local_letter + self.mobile_letter).difference(set(self.before_letter))) == 1:
                 self.drive = ''.join(set(self.local_letter + self.mobile_letter).difference(set(self.before_letter)))
 
                 if os.path.exists('PrestoUsbService.exe'):
@@ -523,8 +520,10 @@ class TrayApp:
                 exe_action = QAction(f"{drive_name} ({drive})", self.exeSubMenu)
                 eject_action = QAction(f"{drive_name} ({drive})", self.ejectSubMenu)
 
-                exe_action.triggered.connect(lambda _, d=drive: subprocess.Popen(["PrestoUsbService.exe", d], shell=True))
-                eject_action.triggered.connect(lambda _, d=drive: self.ejectDrive(d))
+                exe_action.triggered.connect(
+                    lambda _, d=drive: subprocess.Popen(["PrestoUsbService.exe", d], shell=True))
+                eject_action.triggered.connect(
+                    lambda _, d=drive: self.ejectDrive(d))
 
                 self.exeSubMenu.addAction(exe_action)
                 self.ejectSubMenu.addAction(eject_action)
@@ -562,7 +561,8 @@ class TrayApp:
 if __name__ == "__main__":
     if (len(sys.argv) == 2 and sys.argv[1] == '--force-start') or cfg.AutoRun.value:
         with Mutex():
-            QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+            QApplication.setHighDpiScaleFactorRoundingPolicy(
+                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
             QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
             QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
             if darkdetect.isDark():
