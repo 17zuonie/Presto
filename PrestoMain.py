@@ -17,20 +17,25 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QLabel, QWid
 from PyQt5.QtWinExtras import QWinTaskbarButton
 from qfluentwidgets import setTheme, Theme, BodyLabel, isDarkTheme, PushButton, SubtitleLabel, ProgressBar, \
     InfoBar, InfoBarIcon, InfoBarPosition, IndeterminateProgressBar, setThemeColor, PrimaryPushButton, \
-    TableWidget, IndeterminateProgressRing, TextWrap
+    TableWidget, IndeterminateProgressRing, TextWrap, FluentFontIconBase
 from qfluentwidgets.components.widgets.info_bar import InfoIconWidget, InfoBarManager
 from qframelesswindow.titlebar import MinimizeButton, CloseButton, MaximizeButton
 from qframelesswindow import TitleBarButton
 from qframelesswindow.utils import startSystemMove
 from qframelesswindow import FramelessDialog
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
-from qfluentwidgets import FluentIcon as FIF
 
 
 if sys.platform == 'win32' and sys.getwindowsversion().build >= 22000:
     from FramelessWindow import AcrylicWindow as Window
 else:
     from FramelessWindow import WindowsFramelessWindow as Window
+
+
+class FluentFontIcon(FluentFontIconBase):
+
+    def path(self, theme=Theme.AUTO):
+        return "Font/SegoeIcons.ttf"
 
 
 class TitleBarBase(QWidget):
@@ -668,9 +673,9 @@ class MainWindow(MicaWindow):
         self.detailLabel = BodyLabel(self)
         self.detailLabel.setText(self.displayText)
         self.detailLabel.setTextColor(QColor(114, 114, 114))
-        self.showDetailBtn = PrimaryPushButton(FIF.CHECKBOX, '选项', self)
-        self.cancelBtn = PushButton(FIF.CLOSE, '取消', self)
-        self.pauseBtn = PushButton(FIF.PAUSE, '暂停', self)
+        self.showDetailBtn = PrimaryPushButton(FluentFontIcon("\ue73a"), '选项', self)
+        self.cancelBtn = PushButton(FluentFontIcon("\ue711"), '取消', self)
+        self.pauseBtn = PushButton(FluentFontIcon("\ue769"), '暂停', self)
         self.showDetailBtn.clicked.connect(self.onShowDetailBtn)
         self.cancelBtn.clicked.connect(self.onCancelBtn)
         self.pauseBtn.clicked.connect(self.onPauseBtn)
@@ -692,11 +697,11 @@ class MainWindow(MicaWindow):
         self.bottomLayout.addWidget(self.inProgressBar)
 
         self.timeLeft = 9
-        self.finishBtn = PrimaryPushButton(FIF.ACCEPT, f'完成({self.timeLeft})', self)
+        self.finishBtn = PrimaryPushButton(FluentFontIcon("\ue8fb"), f'完成({self.timeLeft})', self)
         self.finishBtn.setVisible(False)
-        self.viewBtn = PushButton(FIF.FOLDER, '查看', self)
+        self.viewBtn = PushButton(FluentFontIcon("\ue8b7"), '查看', self)
         self.viewBtn.setVisible(False)
-        self.ejectBtn = PushButton(FIF.EMBED, '退出U盘', self)
+        self.ejectBtn = PushButton(FluentFontIcon("\uf847"), '退出U盘', self)
         self.ejectBtn.setVisible(False)
         self.finishBtn.clicked.connect(self.Quit)
         self.viewBtn.clicked.connect(self.onViewBtn)
@@ -947,7 +952,7 @@ class MainWindow(MicaWindow):
         if self.isPaused:
             """resume"""
             self.pauseBtn.setText("暂停")
-            self.pauseBtn.setIcon(FIF.PAUSE)
+            self.pauseBtn.setIcon(FluentFontIcon("\ue769"))
             self.isPaused = False
             self.statusLabel.setText("准备中")
             if self.deleteThreadRunning:
@@ -967,7 +972,7 @@ class MainWindow(MicaWindow):
         else:
             """pause"""
             self.pauseBtn.setText("继续")
-            self.pauseBtn.setIcon(FIF.PLAY)
+            self.pauseBtn.setIcon(FluentFontIcon("\ue768"))
             self.isPaused = True
             self.statusLabel.setText("已暂停")
             if self.deleteThreadRunning:
@@ -1031,6 +1036,15 @@ if __name__ == '__main__':
     15          commandOption
     """
 
+    currentTask = 0
+    listDocument = ["*.pdf", "*.doc", "*.docx", "*.ppt", "*.pptx", "*.txt"]
+    listPicture = ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.svg", "*.webp", "*.avif"]
+    listAudio = ["*.mp3", "*.wav", "*.flac", "*.ape", "*.acc", "*.ogg", "*.wma"]
+    listVideo = ["*.mp4", "*.avi", "*.mov", "*.wmv", "*.mkv"]
+    listApplication = ["*.exe", "*.dll", "*.msi", "*.bat", "*.cmd"]
+    listZipFile = ["*.zip", "*.rar", "*.7z", "*.iso"]
+    listMerge = []
+
     try:
         drive = sys.argv[1][0] + ':'
         taskList = []
@@ -1052,8 +1066,30 @@ if __name__ == '__main__':
             commandOption = commandOption + " /skip_empty_dir=FALSE"
         if cfg.IsSizeFilter.value:
             commandOption = commandOption + f' /max_size="{cfg.SizeFilterValue.value}{cfg.SizeFilterUnit.value[0]}"'
-
-        currentTask = 0
+        if cfg.IsTypeFilter.value:
+            if cfg.TypeFilterMode.value == "Exclude":
+                commandOption = commandOption + " /exclude="
+            elif cfg.TypeFilterMode.value == "Include":
+                commandOption = commandOption + " /include="
+            if cfg.IsDocument.value:
+                listMerge += listDocument
+            if cfg.IsPicture.value:
+                listMerge += listPicture
+            if cfg.IsAudio.value:
+                listMerge += listAudio
+            if cfg.IsVideo.value:
+                listMerge += listVideo
+            if cfg.IsApplication.value:
+                listMerge += listApplication
+            if cfg.IsZipFile.value:
+                listMerge += listZipFile
+            if cfg.IsCustomType.value:
+                customType = [x.strip() for x in cfg.CustomType.value.split(",")]
+                for i in customType:
+                    if i:
+                        listMerge.append(f"*{i}")
+            strMerge = "; ".join(map(str, list(dict.fromkeys(listMerge))))
+            commandOption = commandOption + f'"{strMerge}"'
     except:
         sys.exit()
 

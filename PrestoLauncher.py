@@ -17,10 +17,9 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QHBoxLayout, QWid
 from qfluentwidgets import setTheme, Theme, isDarkTheme, setThemeColor, FluentStyleSheet, TransparentToolButton, \
     RoundMenu, EditableComboBox, HyperlinkButton, PrimaryPushButton, themeColor, PushButton, InfoBar, InfoBarIcon, \
     InfoBarPosition, setFont, LineEditButton, MenuAnimationType, TransparentPushButton, ToolTipFilter, ToolTipPosition, \
-    BodyLabel, TextWrap
+    BodyLabel, TextWrap, FluentFontIconBase
 from qfluentwidgets.components.widgets.combo_box import ComboItem, ComboBoxMenu
 from qfluentwidgets.components.widgets.line_edit import CompleterMenu
-from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessDialog
 from qframelesswindow import TitleBar
 
@@ -54,6 +53,12 @@ class Mutex:
             portalocker.unlock(self.file)
             self.file.close()
             os.remove('PrestoLauncher.lockfile')
+
+
+class FluentFontIcon(FluentFontIconBase):
+
+    def path(self, theme=Theme.AUTO):
+        return "Font/SegoeIcons.ttf"
 
 
 class UiErrorDialog:
@@ -160,28 +165,28 @@ class EditMenu(RoundMenu):
 
     def createActions(self):
         self.cutAct = QAction(
-            FIF.CUT.icon(),
+            FluentFontIcon("\ue8c6").icon(),
             "剪切",
             self,
             shortcut="Ctrl+X",
             triggered=self.parent().cut,
         )
         self.copyAct = QAction(
-            FIF.COPY.icon(),
+            FluentFontIcon("\ue8c8").icon(),
             "复制",
             self,
             shortcut="Ctrl+C",
             triggered=self.parent().copy,
         )
         self.pasteAct = QAction(
-            FIF.PASTE.icon(),
+            FluentFontIcon("\ue77f").icon(),
             "粘贴",
             self,
             shortcut="Ctrl+V",
             triggered=self.parent().paste,
         )
         self.cancelAct = QAction(
-            FIF.CANCEL.icon(),
+            FluentFontIcon("\ue7a7").icon(),
             "撤销",
             self,
             shortcut="Ctrl+Z",
@@ -323,7 +328,7 @@ class LineEdit(QLineEdit):
         setFont(self)
 
         self.hBoxLayout = QHBoxLayout(self)
-        self.clearButton = LineEditButton(FIF.CLOSE, self)
+        self.clearButton = LineEditButton(FluentFontIcon("\ue894"), self)
 
         self.clearButton.setFixedSize(29, 25)
         self.clearButton.hide()
@@ -491,7 +496,7 @@ class ComboBoxBase:
         FluentStyleSheet.COMBO_BOX.apply(self)
         self.installEventFilter(self)
 
-    def addItem(self, text, icon: Union[str, QIcon, FIF] = None, userData=None):
+    def addItem(self, text, icon: Union[str, QIcon] = None, userData=None):
         """ add item
 
         Parameters
@@ -639,7 +644,7 @@ class ComboBoxBase:
         if 0 <= index < len(self.items):
             self.items[index].userData = value
 
-    def setItemIcon(self, index: int, icon: Union[str, QIcon, FIF]):
+    def setItemIcon(self, index: int, icon: Union[str, QIcon]):
         """ Sets the data role for the item on the given index """
         if 0 <= index < len(self.items):
             self.items[index].icon = icon
@@ -677,7 +682,7 @@ class ComboBoxBase:
         """ Returns the number of items in the combobox """
         return len(self.items)
 
-    def insertItem(self, index: int, text: str, icon: Union[str, QIcon, FIF] = None, userData=None):
+    def insertItem(self, index: int, text: str, icon: Union[str, QIcon] = None, userData=None):
         """ Inserts item into the combobox at the given index. """
         item = ComboItem(text, icon, userData)
         self.items.insert(index, item)
@@ -795,7 +800,7 @@ class EditableComboBox(LineEdit, ComboBoxBase):
         super().__init__(parent=parent)
         self._setUpUi()
 
-        self.dropButton = LineEditButton(FIF.ARROW_DOWN, self)
+        self.dropButton = LineEditButton(FluentFontIcon("\ue70d"), self)
 
         self.setTextMargins(0, 0, 29, 0)
         self.dropButton.setFixedSize(30, 25)
@@ -899,12 +904,12 @@ class Window(MicaWindow):
 
         self.usbScanBtn = TransparentPushButton(self)
         self.usbScanBtn.setText('U盘扫描')
-        self.usbScanBtn.setIcon(FIF.UPDATE)
+        self.usbScanBtn.setIcon(FluentFontIcon("\ue88e"))
         self.usbScanBtn.clicked.connect(self.onUsbScanBtn)
         self.openSettingBtn = TransparentToolButton(self)
         self.openHelpBtn = TransparentToolButton(self)
-        self.openSettingBtn.setIcon(FIF.SETTING)
-        self.openHelpBtn.setIcon(FIF.HELP)
+        self.openSettingBtn.setIcon(FluentFontIcon("\ue713"))
+        self.openHelpBtn.setIcon(FluentFontIcon("\uea6b"))
         self.openSettingBtn.clicked.connect(self.onOpenSettingBtn)
         self.openHelpBtn.clicked.connect(self.onOpenHelpBtn)
 
@@ -930,7 +935,7 @@ class Window(MicaWindow):
         self.comboBox.setCompleter(self.completer)
         self.chooseBtn = HyperlinkButton(self)
         self.chooseBtn.setText("浏览")
-        self.chooseBtn.setIcon(FIF.FOLDER)
+        self.chooseBtn.setIcon(FluentFontIcon("\ue8b7"))
         self.chooseBtn.clicked.connect(self.onChooseBtn)
         self.middleLayout = QHBoxLayout()
         self.middleLayout.setSpacing(12)

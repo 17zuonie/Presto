@@ -16,19 +16,19 @@ from PyQt5.QtGui import QColor, QIcon, QPainter, QTextCursor, QPainterPath, QCur
 from PyQt5.QtWidgets import QFrame, QApplication, QWidget, QHBoxLayout, QFileDialog, QLabel, QVBoxLayout, \
     QPushButton, QButtonGroup, QTextBrowser, QTextEdit, QSizePolicy, QLineEdit, QSpinBox, QScrollArea, \
     QScroller, QAction
-from qfluentwidgets import NavigationItemPosition, SubtitleLabel, MessageBox, ExpandLayout, \
-    SettingCardGroup, RadioButton, ExpandSettingCard, ComboBox, SwitchButton, IndicatorPosition, qconfig, \
-    isDarkTheme, ConfigItem, OptionsConfigItem, FluentStyleSheet, HyperlinkButton, Slider, IconWidget, drawIcon, \
-    setThemeColor, ImageLabel, MessageBoxBase, SmoothScrollDelegate, setFont, themeColor, setTheme, Theme, qrouter, \
-    NavigationBar, NavigationBarPushButton, BodyLabel, InfoBadge, SplashScreen, InfoBarIcon, PushButton, TextWrap
-from qfluentwidgets.components.widgets.line_edit import EditLayer
+from qfluentwidgets import NavigationItemPosition, SubtitleLabel, MessageBox, ExpandLayout, SettingCardGroup, \
+    RadioButton, ExpandSettingCard, ComboBox, SwitchButton, IndicatorPosition, qconfig, isDarkTheme, ConfigItem, \
+    OptionsConfigItem, FluentStyleSheet, HyperlinkButton, Slider, IconWidget, drawIcon, setThemeColor, ImageLabel, \
+    MessageBoxBase, SmoothScrollDelegate, setFont, themeColor, setTheme, Theme, qrouter, NavigationBar, SplashScreen, \
+    InfoBarIcon, PushButton, TextWrap, TransparentToolButton, NavigationBarPushButton, TransparentDropDownPushButton, \
+    LineEdit, ToolTipFilter, ToolTipPosition, FluentFontIconBase, BodyLabel, InfoBar, InfoBarPosition
+from qfluentwidgets.components.widgets.line_edit import EditLayer, LineEditButton
 from qfluentwidgets.components.widgets.menu import MenuAnimationType, RoundMenu, CheckableMenu, MenuIndicatorType
 from qfluentwidgets.components.widgets.spin_box import SpinButton, SpinIcon
 from qfluentwidgets.window.fluent_window import FluentWindowBase
 from qframelesswindow.titlebar import MinimizeButton, CloseButton, MaximizeButton
 from qframelesswindow import TitleBarButton
 from qframelesswindow.utils import startSystemMove
-from qfluentwidgets import FluentIcon as FIF
 
 
 class Mutex:
@@ -56,10 +56,17 @@ class Mutex:
             os.remove('PrestoSetting.lockfile')
 
 
+class FluentFontIcon(FluentFontIconBase):
+
+    def path(self, theme=Theme.AUTO):
+        return "Font/SegoeIcons.ttf"
+
+
 class SmoothScrollArea(QScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.viewport().setAttribute(Qt.WA_AcceptTouchEvents, True)
         self.delegate = SmoothScrollDelegate(self, True)
         QScroller.grabGesture(self.viewport(), QScroller.TouchGesture)
 
@@ -92,28 +99,28 @@ class EditMenu(RoundMenu):
 
     def createActions(self):
         self.cutAct = QAction(
-            FIF.CUT.icon(),
+            FluentFontIcon("\ue8c6").icon(),
             "剪切",
             self,
             shortcut="Ctrl+X",
             triggered=self.parent().cut,
         )
         self.copyAct = QAction(
-            FIF.COPY.icon(),
+            FluentFontIcon("\ue8c8").icon(),
             "复制",
             self,
             shortcut="Ctrl+C",
             triggered=self.parent().copy,
         )
         self.pasteAct = QAction(
-            FIF.PASTE.icon(),
+            FluentFontIcon("\ue77f").icon(),
             "粘贴",
             self,
             shortcut="Ctrl+V",
             triggered=self.parent().paste,
         )
         self.cancelAct = QAction(
-            FIF.CANCEL.icon(),
+            FluentFontIcon("\ue7a7").icon(),
             "撤销",
             self,
             shortcut="Ctrl+Z",
@@ -196,6 +203,50 @@ class LineEditMenu(EditMenu):
         return super().exec(pos, ani, aniType)
 
 
+class CustomLineEdit(LineEdit):
+    acceptSignal = pyqtSignal(bool)
+    showInfoSignal = pyqtSignal(bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.isAccept = False
+        self.acceptButton = LineEditButton(FluentFontIcon("\ue8fb"), self)
+        self.cancelButton = LineEditButton(FluentFontIcon("\ue711"), self)
+        self.acceptButton.clicked.connect(self.accept)
+        self.cancelButton.clicked.connect(self.cancel)
+
+        self.hBoxLayout.addWidget(self.acceptButton, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.cancelButton, 0, Qt.AlignRight)
+        self.setClearButtonEnabled(False)
+        self.setTextMargins(0, 0, 59, 0)
+
+    def validate(self, s: str) -> bool:
+        if len(s) > 11:
+            return False
+        for char in s:
+            if not ('a' <= char <= 'z' or '0' <= char <= '9' or char == '.'):
+                return False
+        return True
+
+    def accept(self):
+        text = self.text().strip().lower()
+        if text and self.validate(text):
+            self.isAccept = True
+            self.acceptSignal.emit(True)
+        else:
+            self.isAccept = False
+            self.showInfoSignal.emit(True)
+            return
+
+    def cancel(self):
+        self.isAccept = False
+        self.acceptSignal.emit(False)
+
+    def setClearButtonEnabled(self, enable: bool):
+        self._isClearButtonEnabled = enable
+        self.setTextMargins(0, 0, 28 * enable + 30, 0)
+
+
 class SpinBoxBase:
     """ Spin box ui """
 
@@ -236,10 +287,10 @@ class SpinBoxBase:
 
         path = QPainterPath()
         w, h = self.width(), self.height()
-        path.addRoundedRect(QRectF(0, h-10, w, 10), 5, 5)
+        path.addRoundedRect(QRectF(0, h - 10, w, 10), 5, 5)
 
         rectPath = QPainterPath()
-        rectPath.addRect(0, h-10, w, 8)
+        rectPath.addRect(0, h - 10, w, 8)
         path = path.subtracted(rectPath)
 
         painter.fillPath(path, themeColor())
@@ -332,7 +383,7 @@ class SettingIconWidget(IconWidget):
 
 
 class SettingCard(QFrame):
-    def __init__(self, icon: Union[str, QIcon, FIF], title, content=None, parent=None):
+    def __init__(self, icon: Union[str, QIcon], title, content=None, parent=None):
         """
         Parameters
         ----------
@@ -412,8 +463,7 @@ class SettingCard(QFrame):
 class SwitchSettingCard(SettingCard):
     checkedChanged = pyqtSignal(bool)
 
-    def __init__(self, icon: Union[str, QIcon, FIF], title, content=None,
-                 configItem: ConfigItem = None, parent=None):
+    def __init__(self, icon: Union[str, QIcon], title, content=None, configItem: ConfigItem = None, parent=None):
         """
         Parameters
         ----------
@@ -467,7 +517,7 @@ class SwitchSettingCard(SettingCard):
 class RangeSettingCard(SettingCard):
     valueChanged = pyqtSignal(int)
 
-    def __init__(self, configItem, icon: Union[str, QIcon, FIF], title, content=None, parent=None):
+    def __init__(self, configItem, icon: Union[str, QIcon], title, content=None, parent=None):
         """
         Parameters
         ----------
@@ -521,7 +571,7 @@ class RangeSettingCard(SettingCard):
 class PushSettingCard(SettingCard):
     clicked = pyqtSignal()
 
-    def __init__(self, text, icon: Union[str, QIcon, FIF], title, content=None, parent=None):
+    def __init__(self, text, icon: Union[str, QIcon], title, content=None, parent=None):
         """
         Parameters
         ----------
@@ -556,7 +606,7 @@ class PrimaryPushSettingCard(PushSettingCard):
 class SpinBoxSettingCard(SettingCard):
     valueChanged = pyqtSignal(int)
 
-    def __init__(self, configItem: ConfigItem, icon: Union[str, QIcon, FIF], title, content=None, parent=None):
+    def __init__(self, configItem: ConfigItem, icon: Union[str, QIcon], title, content=None, parent=None):
         """
         Parameters
         ----------
@@ -601,7 +651,8 @@ class SpinBoxSettingCard(SettingCard):
 
 
 class ComboBoxSettingCard(SettingCard):
-    def __init__(self, configItem: OptionsConfigItem, icon: Union[str, QIcon, FIF], title, content=None, texts=None, parent=None):
+    def __init__(self, configItem: OptionsConfigItem, icon: Union[str, QIcon], title, content=None, texts=None,
+                 parent=None):
         """
         Parameters
         ----------
@@ -652,7 +703,7 @@ class ComboBoxSettingCard(SettingCard):
 class OptionsSettingCard(ExpandSettingCard):
     optionChanged = pyqtSignal(OptionsConfigItem)
 
-    def __init__(self, configItem, icon: Union[str, QIcon, FIF], title, content=None, texts=None, parent=None):
+    def __init__(self, configItem, icon: Union[str, QIcon], title, content=None, texts=None, parent=None):
         """
         Parameters
         ----------
@@ -696,9 +747,11 @@ class OptionsSettingCard(ExpandSettingCard):
         configItem.valueChanged.connect(self.setValue)
         self.buttonGroup.buttonClicked.connect(self.__onButtonClicked)
         if darkdetect.isDark():
-            self.choiceLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.choiceLabel.setStyleSheet(
+                "font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
         else:
-            self.choiceLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.choiceLabel.setStyleSheet(
+                "font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
 
     def __onButtonClicked(self, button: RadioButton):
         if button.text() == self.choiceLabel.text():
@@ -728,9 +781,11 @@ class SizeFilterItem(QWidget):
         self.hBoxLayout = QHBoxLayout(self)
         self.titleLabel = QLabel("最大文件大小", self)
         if darkdetect.isDark():
-            self.titleLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.titleLabel.setStyleSheet(
+                "font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
         else:
-            self.titleLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.titleLabel.setStyleSheet(
+                "font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
 
         self.spinBox = SpinBox(self)
         self.spinBox.setFixedWidth(130)
@@ -739,10 +794,7 @@ class SizeFilterItem(QWidget):
         self.spinBox.setMaximum(1024)
         self.spinBox.setValue(cfg.SizeFilterValue.value)
         self.spinBox.valueChanged.connect(self.setValue)
-        self.unitBtn = HyperlinkButton(self)
-        self.unitBtn.setText(cfg.SizeFilterUnit.value)
-        self.unitBtn.setFixedWidth(50)
-        self.unitBtn.clicked.connect(self.onUnitBtn)
+
         self.KbAction = QAction("KB", self)
         self.MbAction = QAction("MB", self)
         self.GbAction = QAction("GB", self)
@@ -752,11 +804,14 @@ class SizeFilterItem(QWidget):
         self.KbAction.triggered.connect(self.onKbAction)
         self.MbAction.triggered.connect(self.onMbAction)
         self.GbAction.triggered.connect(self.onGbAction)
-        self.unitMenu = CheckableMenu(parent=self.unitBtn, indicatorType=MenuIndicatorType.RADIO)
+        self.unitMenu = CheckableMenu(indicatorType=MenuIndicatorType.RADIO)
         self.unitMenu.addAction(self.KbAction)
         self.unitMenu.addAction(self.MbAction)
         self.unitMenu.addAction(self.GbAction)
         self.updateStatus()
+        self.unitBtn = TransparentDropDownPushButton(self)
+        self.unitBtn.setMenu(self.unitMenu)
+        self.unitBtn.setText(cfg.SizeFilterUnit.value)
 
         self.setFixedHeight(68)
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
@@ -807,7 +862,7 @@ class SizeFilterItem(QWidget):
 class SizeFilterSettingCard(ExpandSettingCard):
 
     def __init__(self, title: str, content: str = None, parent=None):
-        super().__init__(FIF.FILTER, title, content, parent)
+        super().__init__(FluentFontIcon("\ue71c"), title, content, parent)
         self.switchBtn = SwitchButton(self, IndicatorPosition.RIGHT)
         self.switchBtn.setChecked(cfg.IsSizeFilter.value)
         self.switchBtn.setText('开' if cfg.IsSizeFilter.value else '关')
@@ -836,9 +891,11 @@ class TypeFilterModeItem(QWidget):
         self.hBoxLayout = QHBoxLayout(self)
         self.titleLabel = QLabel("过滤模式", self)
         if darkdetect.isDark():
-            self.titleLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
         else:
-            self.titleLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
 
         self.comboItems = ["排除", "包含"]
         self.currentIndex = 0 if cfg.TypeFilterMode.value == "Exclude" else 1
@@ -866,7 +923,7 @@ class TypeFilterModeItem(QWidget):
 
 class TypeFilterItem(QWidget):
 
-    def __init__(self, configItem: ConfigItem, icon: Union[str, QIcon, FIF], title, content=None, parent=None):
+    def __init__(self, configItem: ConfigItem, icon: Union[str, QIcon], title, content=None, parent=None):
         super().__init__(parent=parent)
         self.config = configItem
         self.iconLabel = SettingIconWidget(icon, self)
@@ -875,11 +932,15 @@ class TypeFilterItem(QWidget):
         self.setFixedHeight(70)
         self.iconLabel.setFixedSize(16, 16)
         if darkdetect.isDark():
-            self.titleLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
-            self.contentLabel.setStyleSheet("font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(208, 208, 208);")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(208, 208, 208);")
         else:
-            self.titleLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
-            self.contentLabel.setStyleSheet("font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(96, 96, 96);")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(96, 96, 96);")
 
         self.switchBtn = SwitchButton(self, IndicatorPosition.RIGHT)
         self.switchBtn.setChecked(self.config.value)
@@ -911,21 +972,99 @@ class TypeFilterItem(QWidget):
         cfg.set(self.config, self.switchBtn.isChecked())
 
 
+class CustomTypeFilterItem(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.config = cfg.IsCustomType
+        self.iconLabel = SettingIconWidget(FluentFontIcon("\ue77b"), self)
+        self.titleLabel = QLabel("自定义", self)
+        self.contentLabel = QLabel(self)
+        if cfg.CustomType.value:
+            self.contentLabel.setText(cfg.CustomType.value)
+            self.contentLabel.setHidden(False)
+        else:
+            self.contentLabel.setHidden(True)
+        self.setFixedHeight(70)
+        self.iconLabel.setFixedSize(16, 16)
+        if darkdetect.isDark():
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(208, 208, 208);")
+        else:
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(96, 96, 96);")
+
+        self.switchBtn = SwitchButton(self, IndicatorPosition.RIGHT)
+        self.switchBtn.setChecked(self.config.value)
+        self.switchBtn.setOnText('')
+        self.switchBtn.setOffText('')
+        self.switchBtn.checkedChanged.connect(self.onSwitchBtnChanged)
+
+        self.editBtn = HyperlinkButton(self)
+        self.editBtn.setIcon(FluentFontIcon("\ue70f"))
+        self.editBtn.setText("编辑")
+        self.editBtn.clicked.connect(self.onEditBtn)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.vBoxLayout = QVBoxLayout()
+        self.hBoxLayout.setSpacing(0)
+        self.hBoxLayout.setContentsMargins(48, 0, 32, 0)
+        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+
+        self.hBoxLayout.addWidget(self.iconLabel, 0, Qt.AlignLeft)
+        self.hBoxLayout.addSpacing(16)
+
+        self.hBoxLayout.addLayout(self.vBoxLayout)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignLeft)
+
+        self.hBoxLayout.addSpacing(16)
+        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.editBtn, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.switchBtn, 0, Qt.AlignRight)
+
+    def onSwitchBtnChanged(self):
+        cfg.set(self.config, self.switchBtn.isChecked())
+
+    def onEditBtn(self):
+        w = CustomTypeMessageBox(self.window())
+        if w.exec():
+            text = w.getType()
+            self.contentLabel.setText(text)
+            cfg.set(cfg.CustomType, text)
+            if text:
+                self.contentLabel.setHidden(False)
+            else:
+                self.contentLabel.setHidden(True)
+
+
 class TypeFilterSettingCard(ExpandSettingCard):
 
     def __init__(self, title: str, content: str = None, parent=None):
-        super().__init__(FIF.MEDIA, title, content, parent)
+        super().__init__(FluentFontIcon("\uea69"), title, content, parent)
         self.switchBtn = SwitchButton(self, IndicatorPosition.RIGHT)
         self.switchBtn.setChecked(cfg.IsTypeFilter.value)
         self.switchBtn.setText('开' if cfg.IsTypeFilter.value else '关')
 
         self.typeFilterModeItem = TypeFilterModeItem(self)
-        self.documentItem = TypeFilterItem(cfg.IsDocument, FIF.DOCUMENT, "文档", ".pdf, .doc, .docx, .ppt, .pptx, .txt")
-        self.pictureItem = TypeFilterItem(cfg.IsPicture, FIF.PHOTO, "图片", ".jpg, .jpeg, .png, .gif, .bmp, .svg, .webp")
-        self.audioItem = TypeFilterItem(cfg.IsAudio, FIF.MUSIC, "音频", ".mp3, .wav, .flac, .ape, .acc, .ogg, .wma")
-        self.videoItem = TypeFilterItem(cfg.IsVideo, FIF.VIDEO, "视频", ".mp4, .avi, .mov, .wmv, .mkv")
-        self.applicationItem = TypeFilterItem(cfg.IsApplication, FIF.APPLICATION, "应用", ".exe, .dll, .msi, .bat, .cmd")
-        self.zipFileItem = TypeFilterItem(cfg.IsZipFile, FIF.ZIP_FOLDER, "压缩文件", ".zip, .rar, .7z, .iso")
+        self.documentItem = TypeFilterItem(cfg.IsDocument, FluentFontIcon("\ue8a5"), "文档",
+                                           ".pdf, .doc, .docx, .ppt, .pptx, .txt")
+        self.pictureItem = TypeFilterItem(cfg.IsPicture, FluentFontIcon("\ue91b"), "图片",
+                                          ".jpg, .jpeg, .png, .gif, .bmp, .svg, .webp, .avif")
+        self.audioItem = TypeFilterItem(cfg.IsAudio, FluentFontIcon("\ue8d6"), "音频",
+                                        ".mp3, .wav, .flac, .ape, .acc, .ogg, .wma")
+        self.videoItem = TypeFilterItem(cfg.IsVideo, FluentFontIcon("\ue8b2"), "视频", ".mp4, .avi, .mov, .wmv, .mkv")
+        self.applicationItem = TypeFilterItem(cfg.IsApplication, FluentFontIcon("\uecaa"), "应用",
+                                              ".exe, .dll, .msi, .bat, .cmd")
+        self.zipFileItem = TypeFilterItem(cfg.IsZipFile, FluentFontIcon("\uf012"), "压缩文件", ".zip, .rar, .7z, .iso")
+        self.customTypeItem = CustomTypeFilterItem(self)
 
         self.__initWidget()
 
@@ -943,6 +1082,7 @@ class TypeFilterSettingCard(ExpandSettingCard):
         self.viewLayout.addWidget(self.videoItem)
         self.viewLayout.addWidget(self.applicationItem)
         self.viewLayout.addWidget(self.zipFileItem)
+        self.viewLayout.addWidget(self.customTypeItem)
 
         self.switchBtn.checkedChanged.connect(self.onSwitchBtnChecked)
 
@@ -952,41 +1092,57 @@ class TypeFilterSettingCard(ExpandSettingCard):
 
 
 class FolderItem(QWidget):
-    def __init__(self, folder: str, parent=None):
+    def __init__(self, title: str, configItem: ConfigItem = None, parent=None):
         super().__init__(parent=parent)
-        self.hBoxLayout = QHBoxLayout(self)
-        self.badge = InfoBadge.custom(folder[:2], '#9a9a9a', '#8e8e8e')
-        self.folderLabel = BodyLabel(folder[4:], self)
+        self.config = configItem
+        self.titleLabel = QLabel(title, self)
+        self.contentLabel = QLabel(self.config.value, self)
+        self.setFixedHeight(56)
         if darkdetect.isDark():
-            self.folderLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(208, 208, 208);")
         else:
-            self.folderLabel.setStyleSheet("font: 13px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+            self.contentLabel.setStyleSheet(
+                "font: 11px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: rgb(96, 96, 96);")
 
-        self.changeButton = HyperlinkButton(self)
-        self.changeButton.setText("更改")
+        self.changeBtn = HyperlinkButton(self)
+        self.changeBtn.setText("更改")
+        self.changeBtn.clicked.connect(self.showFolderDialog)
 
-        self.setFixedHeight(53)
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
-        self.hBoxLayout.setContentsMargins(48, 0, 60, 0)
-        self.hBoxLayout.addWidget(self.badge, 0, Qt.AlignLeft)
-        self.hBoxLayout.addWidget(self.folderLabel, 0, Qt.AlignLeft)
+        self.hBoxLayout = QHBoxLayout(self)
+        self.vBoxLayout = QVBoxLayout()
+        self.hBoxLayout.setSpacing(0)
+        self.hBoxLayout.setContentsMargins(36, 0, 32, 0)
+        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.hBoxLayout.addSpacing(16)
+
+        self.hBoxLayout.addLayout(self.vBoxLayout)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignLeft)
+
         self.hBoxLayout.addSpacing(16)
         self.hBoxLayout.addStretch(1)
-        self.hBoxLayout.addWidget(self.changeButton, 0, Qt.AlignRight)
-        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.hBoxLayout.addWidget(self.changeBtn, 0, Qt.AlignRight)
 
-    def setFolder(self, text):
-        self.folderLabel.setText(text[4:])
-        if darkdetect.isDark():
-            self.folderLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
-        else:
-            self.folderLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+    def showFolderDialog(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", cfg.sourceFolder.value)
+        if not folder:
+            return
+        self.contentLabel.setText(folder)
+        cfg.set(self.config, folder)
 
 
 class CustomFolderListSettingCard(ExpandSettingCard):
     folderChanged = pyqtSignal(list)
 
-    def __init__(self, title: str, content: str = None, directory=cfg.sourceFolder.value, parent=None):
+    def __init__(self, title: str, content: str = None, parent=None):
         """
         Parameters
         ----------
@@ -1002,8 +1158,7 @@ class CustomFolderListSettingCard(ExpandSettingCard):
         parent: QWidget
             parent widget
         """
-        super().__init__(FIF.FOLDER_ADD, title, content, parent)
-        self._dialogDirectory = directory
+        super().__init__(FluentFontIcon("\ue8f4"), title, content, parent)
         self.__initWidget()
 
     def __initWidget(self):
@@ -1011,28 +1166,17 @@ class CustomFolderListSettingCard(ExpandSettingCard):
         self.viewLayout.setAlignment(Qt.AlignTop)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.yuwenItem = FolderItem("语文: " + cfg.yuwenFolder.value, self.view)
-        self.shuxueItem = FolderItem("数学: " + cfg.shuxueFolder.value, self.view)
-        self.yingyuItem = FolderItem("英语: " + cfg.yingyuFolder.value, self.view)
-        self.wuliItem = FolderItem("物理: " + cfg.wuliFolder.value, self.view)
-        self.huaxueItem = FolderItem("化学: " + cfg.huaxueFolder.value, self.view)
-        self.shengwuItem = FolderItem("生物: " + cfg.shengwuFolder.value, self.view)
-        self.zhengzhiItem = FolderItem("政治: " + cfg.zhengzhiFolder.value, self.view)
-        self.lishiItem = FolderItem("历史: " + cfg.lishiFolder.value, self.view)
-        self.diliItem = FolderItem("地理: " + cfg.diliFolder.value, self.view)
-        self.jishuItem = FolderItem("技术: " + cfg.jishuFolder.value, self.view)
-        self.ziliaoItem = FolderItem("资料: " + cfg.ziliaoFolder.value, self.view)
-        self.yuwenItem.changeButton.clicked.connect(lambda: self.showFolderDialog(1))
-        self.shuxueItem.changeButton.clicked.connect(lambda: self.showFolderDialog(2))
-        self.yingyuItem.changeButton.clicked.connect(lambda: self.showFolderDialog(3))
-        self.wuliItem.changeButton.clicked.connect(lambda: self.showFolderDialog(4))
-        self.huaxueItem.changeButton.clicked.connect(lambda: self.showFolderDialog(5))
-        self.shengwuItem.changeButton.clicked.connect(lambda: self.showFolderDialog(6))
-        self.zhengzhiItem.changeButton.clicked.connect(lambda: self.showFolderDialog(7))
-        self.lishiItem.changeButton.clicked.connect(lambda: self.showFolderDialog(8))
-        self.diliItem.changeButton.clicked.connect(lambda: self.showFolderDialog(9))
-        self.jishuItem.changeButton.clicked.connect(lambda: self.showFolderDialog(10))
-        self.ziliaoItem.changeButton.clicked.connect(lambda: self.showFolderDialog(11))
+        self.yuwenItem = FolderItem("语文", cfg.yuwenFolder, self.view)
+        self.shuxueItem = FolderItem("数学", cfg.shuxueFolder, self.view)
+        self.yingyuItem = FolderItem("英语", cfg.yingyuFolder, self.view)
+        self.wuliItem = FolderItem("物理", cfg.wuliFolder, self.view)
+        self.huaxueItem = FolderItem("化学", cfg.huaxueFolder, self.view)
+        self.shengwuItem = FolderItem("生物", cfg.shengwuFolder, self.view)
+        self.zhengzhiItem = FolderItem("政治", cfg.zhengzhiFolder, self.view)
+        self.lishiItem = FolderItem("历史", cfg.lishiFolder, self.view)
+        self.diliItem = FolderItem("地理", cfg.diliFolder, self.view)
+        self.jishuItem = FolderItem("技术", cfg.jishuFolder, self.view)
+        self.ziliaoItem = FolderItem("资料", cfg.ziliaoFolder, self.view)
 
         self.viewLayout.addWidget(self.yuwenItem)
         self.viewLayout.addWidget(self.shuxueItem)
@@ -1048,57 +1192,18 @@ class CustomFolderListSettingCard(ExpandSettingCard):
 
         self._adjustViewSize()
 
-    def showFolderDialog(self, index):
-        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", self._dialogDirectory)
-        if not folder:
-            return
-
-        if index==1:
-            cfg.set(cfg.yuwenFolder, folder)
-            self.yuwenItem.setFolder("语文: " + cfg.yuwenFolder.value)
-        elif index==2:
-            cfg.set(cfg.shuxueFolder, folder)
-            self.shuxueItem.setFolder("数学: " + cfg.shuxueFolder.value)
-        elif index==3:
-            cfg.set(cfg.yingyuFolder, folder)
-            self.yingyuItem.setFolder("英语: " + cfg.yingyuFolder.value)
-        elif index==4:
-            cfg.set(cfg.wuliFolder, folder)
-            self.wuliItem.setFolder("物理: " + cfg.wuliFolder.value)
-        elif index==5:
-            cfg.set(cfg.huaxueFolder, folder)
-            self.huaxueItem.setFolder("化学: " + cfg.huaxueFolder.value)
-        elif index==6:
-            cfg.set(cfg.shengwuFolder, folder)
-            self.shengwuItem.setFolder("生物: " + cfg.shengwuFolder.value)
-        elif index==7:
-            cfg.set(cfg.zhengzhiFolder, folder)
-            self.zhengzhiItem.setFolder("政治: " + cfg.zhengzhiFolder.value)
-        elif index==8:
-            cfg.set(cfg.lishiFolder, folder)
-            self.lishiItem.setFolder("历史: " + cfg.lishiFolder.value)
-        elif index==9:
-            cfg.set(cfg.lishiFolder, folder)
-            self.diliItem.setFolder("地理: " + cfg.diliFolder.value)
-        elif index==10:
-            cfg.set(cfg.jishuFolder, folder)
-            self.jishuItem.setFolder("技术: " + cfg.jishuFolder.value)
-        else:
-            cfg.set(cfg.ziliaoFolder, folder)
-            self.ziliaoItem.setFolder("资料: " + cfg.zilaioFolder.value)
-
     def updateContent(self):
-        self.yuwenItem.setFolder("语文: " + cfg.yuwenFolder.value)
-        self.shuxueItem.setFolder("数学: " + cfg.shuxueFolder.value)
-        self.yingyuItem.setFolder("英语: " + cfg.yingyuFolder.value)
-        self.wuliItem.setFolder("物理: " + cfg.wuliFolder.value)
-        self.huaxueItem.setFolder("化学: " + cfg.huaxueFolder.value)
-        self.shengwuItem.setFolder("生物: " + cfg.shengwuFolder.value)
-        self.zhengzhiItem.setFolder("政治: " + cfg.zhengzhiFolder.value)
-        self.lishiItem.setFolder("历史: " + cfg.lishiFolder.value)
-        self.diliItem.setFolder("地理: " + cfg.diliFolder.value)
-        self.jishuItem.setFolder("技术: " + cfg.jishuFolder.value)
-        self.ziliaoItem.setFolder("资料: " + cfg.ziliaoFolder.value)
+        self.yuwenItem.contentLabel.setText(cfg.yuwenFolder.value)
+        self.shuxueItem.contentLabel.setText(cfg.shuxueFolder.value)
+        self.yingyuItem.contentLabel.setText(cfg.yingyuFolder.value)
+        self.wuliItem.contentLabel.setText(cfg.wuliFolder.value)
+        self.huaxueItem.contentLabel.setText(cfg.huaxueFolder.value)
+        self.shengwuItem.contentLabel.setText(cfg.shengwuFolder.value)
+        self.zhengzhiItem.contentLabel.setText(cfg.zhengzhiFolder.value)
+        self.lishiItem.contentLabel.setText(cfg.lishiFolder.value)
+        self.diliItem.contentLabel.setText(cfg.diliFolder.value)
+        self.jishuItem.contentLabel.setText(cfg.jishuFolder.value)
+        self.ziliaoItem.contentLabel.setText(cfg.ziliaoFolder.value)
 
 
 class InfoIconWidget(QWidget):
@@ -1221,6 +1326,7 @@ class InformationBar(QFrame):
 
 class ClearCache(QThread):
     isFinished = pyqtSignal(bool)
+
     def __init__(self):
         super(ClearCache, self).__init__()
 
@@ -1232,7 +1338,7 @@ class ClearCache(QThread):
         self.isFinished.emit(True)
 
 
-class HomeInterface(SmoothScrollArea):
+class SettingInterface(SmoothScrollArea):
     sourceFolderChanged = pyqtSignal(list)
 
     def __init__(self, parent=None):
@@ -1244,7 +1350,8 @@ class HomeInterface(SmoothScrollArea):
         self.settingLabel = QLabel("设置", self)
         if darkdetect.isDark():
             self.scrollWidget.setStyleSheet("background-color: rgba(39, 39, 39, 0);")
-            self.settingLabel.setStyleSheet("font: 33px 'Microsoft YaHei Light'; background-color: transparent; color: white;")
+            self.settingLabel.setStyleSheet(
+                "font: 33px 'Microsoft YaHei Light'; background-color: transparent; color: white;")
         else:
             self.scrollWidget.setStyleSheet("background-color: rgba(249, 249, 249, 0);")
             self.settingLabel.setStyleSheet("font: 33px 'Microsoft YaHei Light'; background-color: transparent;")
@@ -1257,55 +1364,55 @@ class HomeInterface(SmoothScrollArea):
         self.advanceGroup = SettingCardGroup('高级', self.scrollWidget)
         self.optionSourceCard = ComboBoxSettingCard(
             cfg.IsSourceCloud,
-            FIF.FOLDER,
+            FluentFontIcon("\ue8b7"),
             '源文件夹',
             '选择源文件夹来源',
             texts=['云上春晖', '自定义'],
             parent=self.sourceGroup)
         self.autoRunCard = SwitchSettingCard(
-            FIF.POWER_BUTTON,
+            FluentFontIcon("\ue7e8"),
             "开机时启动",
             "",
             configItem=cfg.AutoRun,
             parent=self.actGroup)
         self.notifyCard = SwitchSettingCard(
-            FIF.RINGER,
+            FluentFontIcon("\uea8f"),
             "完成后通知",
             "",
             configItem=cfg.Notify,
             parent=self.actGroup)
         self.cloudCard = PushSettingCard(
             '选择文件夹',
-            FIF.CLOUD,
+            FluentFontIcon("\ue753"),
             "云上春晖",
             cfg.get(cfg.sourceFolder),
             self.sourceGroup)
         self.customFolderCard = CustomFolderListSettingCard(
             "自定义",
             "展开选项卡以设置",
-            directory=cfg.sourceFolder.value,
             parent=self.sourceGroup)
         self.scanCycleCard = RangeSettingCard(
             cfg.ScanCycle,
-            FIF.STOP_WATCH,
+            FluentFontIcon("\ue916"),
             '扫描周期',
             parent=self.performanceGroup)
         self.concurrentProcessCard = SpinBoxSettingCard(
             cfg.ConcurrentProcess,
-            FIF.ALIGNMENT,
+            FluentFontIcon("\ue8e4"),
             '并行进程数',
             parent=self.performanceGroup)
         self.bufSizeCard = OptionsSettingCard(
             cfg.BufSize,
-            FIF.PIE_SINGLE,
+            FluentFontIcon("\ueb05"),
             '缓冲区大小',
             texts=['32 MB', '64 MB', '128 MB', '256 MB', '512 MB', '1 GB'],
             parent=self.performanceGroup)
-        self.infoBar = InformationBar(title="", content="以下选项会对所有任务产生直接而现实的影响", parent=self.filterGroup)
+        self.infoBar = InformationBar(title="", content="以下选项会对所有任务产生直接而现实的影响",
+                                      parent=self.filterGroup)
         self.isSkipEmptyDirCard = SwitchSettingCard(
-            FIF.REMOVE_FROM,
+            FluentFontIcon("\uecc9"),
             "跳过空文件夹",
-            "不复制空文件夹",
+            "不复制空文件夹及过滤后为空的文件夹",
             configItem=cfg.IsSkipEmptyDir,
             parent=self.filterGroup)
         self.sizeFilterCard = SizeFilterSettingCard(
@@ -1318,25 +1425,25 @@ class HomeInterface(SmoothScrollArea):
             parent=self.filterGroup)
         self.clearCard = PushSettingCard(
             '清除',
-            FIF.BROOM,
+            FluentFontIcon("\uea99"),
             '清除缓存',
             self.getSize(),
             self.storageGroup)
         self.recoverCard = PushSettingCard(
             '恢复',
-            FIF.CLEAR_SELECTION,
+            FluentFontIcon("\uebc4"),
             '恢复默认设置',
             '重置所有参数为初始值',
             self.advanceGroup)
         self.devCard = PushSettingCard(
             '打开',
-            FIF.DEVELOPER_TOOLS,
+            FluentFontIcon("\uec7a"),
             '开发者选项',
             '打开配置文件',
             self.advanceGroup)
         self.helpCard = PrimaryPushSettingCard(
             '转到帮助',
-            FIF.HELP,
+            FluentFontIcon("\uea6b"),
             '帮助',
             '提示与常见问题',
             self.advanceGroup)
@@ -1399,10 +1506,10 @@ class HomeInterface(SmoothScrollArea):
                 except:
                     pass
         kbSize = float(size / 1024)
-        if kbSize >= 1024*1024:
-            return str(round(kbSize/1024/1024, 1)) + ' GB'
+        if kbSize >= 1024 * 1024:
+            return str(round(kbSize / 1024 / 1024, 1)) + ' GB'
         elif kbSize >= 1024:
-            return str(round(kbSize/1024, 1)) + ' MB'
+            return str(round(kbSize / 1024, 1)) + ' MB'
         else:
             return str(int(kbSize)) + ' KB'
 
@@ -1530,9 +1637,9 @@ class DetailMessageBox(MessageBoxBase):
         self.githubBtn.setText('源代码')
         self.websiteBtn.setText('网站主页')
         self.onlineDocBtn.setText('在线文档')
-        self.githubBtn.setIcon(FIF.GITHUB)
-        self.websiteBtn.setIcon(FIF.GLOBE)
-        self.onlineDocBtn.setIcon(FIF.DOCUMENT)
+        self.githubBtn.setIcon(FluentFontIcon("\ue71b"))
+        self.websiteBtn.setIcon(FluentFontIcon("\ue774"))
+        self.onlineDocBtn.setIcon(FluentFontIcon("\ue8a5"))
         self.githubBtn.clicked.connect(lambda: WebOpen("https://github.com/sudo0015/Presto"))
         self.websiteBtn.clicked.connect(lambda: WebOpen("https://sudo0015.github.io/"))
         self.onlineDocBtn.clicked.connect(lambda: WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
@@ -1552,6 +1659,201 @@ class DetailMessageBox(MessageBoxBase):
         self.widget.setMinimumWidth(350)
 
 
+class CustomTypeMessageBoxItem(QWidget):
+    deleteSignal = pyqtSignal(bool)
+
+    def __init__(self, CustomType: str, parent=None):
+        super().__init__(parent=parent)
+        self.customType = CustomType
+        self.hBoxLayout = QHBoxLayout(self)
+        self.titleLabel = QLabel(self.customType, self)
+        if darkdetect.isDark():
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
+        else:
+            self.titleLabel.setStyleSheet(
+                "font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: black;")
+
+        self.lineEdit = CustomLineEdit(self)
+        self.lineEdit.setFixedWidth(200)
+        self.lineEdit.setHidden(True)
+        self.lineEdit.acceptSignal.connect(self.onAcceptSignal)
+
+        self.editBtn = TransparentToolButton(self)
+        self.editBtn.setIcon(FluentFontIcon("\ue70f"))
+        self.editBtn.setToolTip("编辑")
+        self.editBtn.installEventFilter(ToolTipFilter(self.editBtn, 0, ToolTipPosition.BOTTOM))
+        self.editBtn.clicked.connect(self.edit)
+
+        self.deleteBtn = TransparentToolButton(self)
+        self.deleteBtn.setIcon(FluentFontIcon("\ue74d"))
+        self.deleteBtn.setToolTip("删除")
+        self.deleteBtn.installEventFilter(ToolTipFilter(self.deleteBtn, 0, ToolTipPosition.BOTTOM))
+        self.deleteBtn.clicked.connect(self.delete)
+
+        self.setFixedHeight(48)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        self.hBoxLayout.setContentsMargins(24, 0, 18, 0)
+        self.hBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
+        self.hBoxLayout.addWidget(self.lineEdit, 0, Qt.AlignLeft)
+        self.hBoxLayout.addSpacing(16)
+        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.editBtn, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.deleteBtn, 0, Qt.AlignRight)
+        self.hBoxLayout.setAlignment(Qt.AlignVCenter)
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing)
+
+        if isDarkTheme():
+            painter.setBrush(QColor(255, 255, 255, 13))
+            painter.setPen(QColor(0, 0, 0, 50))
+        else:
+            painter.setBrush(QColor(255, 255, 255, 170))
+            painter.setPen(QColor(0, 0, 0, 19))
+
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
+
+    def onAcceptSignal(self):
+        self.editBtn.setEnabled(True)
+        if self.lineEdit.isAccept:
+            self.titleLabel.setHidden(False)
+            self.lineEdit.setHidden(True)
+
+            text = self.lineEdit.text().strip().lower()
+            self.customType = '.' + text if text[0] != '.' else text
+            self.titleLabel.setText(self.customType)
+        else:
+            self.titleLabel.setHidden(False)
+            self.lineEdit.setHidden(True)
+            if self.customType:
+                self.titleLabel.setText(self.customType)
+            else:
+                self.delete()
+
+    def edit(self):
+        self.editBtn.setEnabled(False)
+        self.lineEdit.setText(self.customType)
+        self.titleLabel.setHidden(True)
+        self.lineEdit.setHidden(False)
+        self.lineEdit.setFocus()
+
+    def delete(self):
+        self.deleteSignal.emit(True)
+
+
+class CustomTypeMessageBox(MessageBoxBase):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel('自定义文件类型', self)
+        self.countLabel = BodyLabel("0 个项目", self)
+        self.addBtn = HyperlinkButton(self)
+        self.addBtn.setText("添加文件类型")
+        self.addBtn.setIcon(FluentFontIcon("\ue109"))
+        self.addBtn.setFixedWidth(148)
+        self.addBtn.clicked.connect(self.onAddBtn)
+        self.topLayout = QHBoxLayout(self)
+        self.topLayout.setContentsMargins(14, 0, 10, 0)
+        self.topLayout.addWidget(self.countLabel)
+        self.topLayout.addWidget(self.addBtn)
+
+        self.scrollContent = QWidget()
+        self.scrollLayout = QVBoxLayout(self.scrollContent)
+        self.scrollArea = SmoothScrollArea(self)
+        self.scrollArea.setWidget(self.scrollContent)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.enableTransparentBackground()
+        self.scrollLayout.setContentsMargins(10, 0, 16, 0)
+        self.scrollLayout.setSpacing(8)
+        self.scrollLayout.addStretch(1)
+        self.frames = []
+        self.types = [x.strip() for x in cfg.CustomType.value.split(",")][::-1]
+
+        self.emptyLabel = QLabel('没有要显示的内容', self.scrollContent)
+        self.emptyLabel.setAlignment(Qt.AlignCenter)
+        if darkdetect.isDark():
+            self.emptyLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #999999;")
+        else:
+            self.emptyLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; color: #777777;")
+        self.emptyLabel.setHidden(True)
+        self.scrollLayout.addWidget(self.emptyLabel, 0, Qt.AlignCenter)
+
+        for i in self.types:
+            if i:
+                item = CustomTypeMessageBoxItem(i, self.scrollContent)
+                item.deleteSignal.connect(lambda _, frame=item: self.removeFrame(frame))
+                item.lineEdit.showInfoSignal.connect(self.showInfo)
+                self.addFrame(item)
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addLayout(self.topLayout)
+        self.viewLayout.addWidget(self.scrollArea, 1)
+
+        self.yesButton.setText('保存')
+        self.cancelButton.setText('取消')
+
+        self.widget.setMinimumSize(500, 420)
+        self.updateLayout()
+
+    def onAddBtn(self):
+        item = CustomTypeMessageBoxItem("", self.scrollContent)
+        item.deleteSignal.connect(lambda _, frame=item: self.removeFrame(frame))
+        item.lineEdit.showInfoSignal.connect(self.showInfo)
+        item.edit()
+        self.addFrame(item)
+        self.updateLayout()
+
+    def addFrame(self, frame: QFrame = None) -> QFrame:
+        if frame is None:
+            frame = QFrame(self.scrollContent)
+
+        self.scrollLayout.insertWidget(0, frame)
+        self.frames.append(frame)
+        self.updateLayout()
+
+        return frame
+
+    def removeFrame(self, frame: QFrame):
+        if frame in self.frames:
+            self.scrollLayout.removeWidget(frame)
+            frame.setParent(None)
+            self.frames.remove(frame)
+
+            self.updateLayout()
+
+    def updateLayout(self):
+        self.countLabel.setText(f"{len(self.frames)} 个项目")
+
+        self.scrollContent.adjustSize()
+        self.scrollArea.updateGeometry()
+
+        if not self.frames:
+            self.emptyLabel.setHidden(False)
+            self.emptyLabel.setFixedSize(self.scrollContent.sizeHint().width(), 200)
+        else:
+            self.emptyLabel.setHidden(True)
+
+    def showInfo(self):
+        InfoBar.error(
+            title='无效的文件类型',
+            content='',
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=1000,
+            parent=self
+        )
+
+    def getType(self):
+        types = []
+        for item in self.frames[::-1]:
+            if item.customType:
+                types.append(item.customType)
+        return ', '.join(types)
+
+
 class AboutInterface(SmoothScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -1567,25 +1869,25 @@ class AboutInterface(SmoothScrollArea):
         self.aboutGroup = SettingCardGroup('', self.scrollWidget)
         self.aboutESCard = PushSettingCard(
             '详细信息',
-            FIF.INFO,
+            FluentFontIcon("\ue946"),
             '关于 Presto',
             f'版本 {VERSION}',
             self.aboutGroup)
         self.aboutBSCard = PushSettingCard(
             '了解更多',
-            FIF.PEOPLE,
+            FluentFontIcon("\ue77b"),
             '关于作者',
             'BUG STUDIO',
             self.aboutGroup)
         self.helpCard = PrimaryPushSettingCard(
             '转到帮助',
-            FIF.HELP,
+            FluentFontIcon("\uea6b"),
             '帮助',
             '提示与常见问题',
             self.aboutGroup)
         self.feedbackCard = PrimaryPushSettingCard(
             '提供反馈',
-            FIF.FEEDBACK,
+            FluentFontIcon("\ued15"),
             '反馈',
             '报告问题或提出建议',
             self.aboutGroup)
@@ -1594,7 +1896,7 @@ class AboutInterface(SmoothScrollArea):
     def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewportMargins(0, 0, 0, 0)
+        self.setViewportMargins(0, 0, 20, 0)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
 
@@ -1813,8 +2115,9 @@ class MSFluentWindow(FluentWindowBase):
         self.titleBar.raise_()
         self.titleBar.setAttribute(Qt.WA_StyledBackground)
 
-    def addSubInterface(self, interface: QWidget, icon: Union[FIF, QIcon, str], text: str,
-                        selectedIcon=None, position=NavigationItemPosition.TOP, isTransparent=False) -> NavigationBarPushButton:
+    def addSubInterface(self, interface: QWidget, icon: Union[QIcon, str], text: str,
+                        selectedIcon=None, position=NavigationItemPosition.TOP,
+                        isTransparent=False) -> NavigationBarPushButton:
         """ add sub interface, the object name of `interface` should be set already
         before calling this method
 
@@ -1870,6 +2173,7 @@ class Main(MSFluentWindow):
         else:
             setThemeColor(QColor(90, 51, 174))
         self.resize(800, 600)
+        self.setMinimumSize(640, 550)
         self.setWindowTitle('Presto 设置')
         self.setWindowIcon(QIcon(':/icon.png'))
         self.titleBar.raise_()
@@ -1879,26 +2183,27 @@ class Main(MSFluentWindow):
         self.splashScreen = SplashScreen(self.windowIcon(), self)
         self.splashScreen.raise_()
 
-        self.homeInterface = HomeInterface(self)
+        self.homeInterface = SettingInterface(self)
         self.aboutInterface = AboutInterface(self)
         self.homeInterface.setObjectName('homeInterface')
         self.aboutInterface.setObjectName('aboutInterface')
-        self.addSubInterface(self.homeInterface, FIF.HOME, '设置', FIF.HOME_FILL)
+        self.addSubInterface(self.homeInterface, FluentFontIcon("\ue713"), '设置', FluentFontIcon("\uf8b0"))
         self.navigationInterface.addItem(
             routeKey='Log',
-            icon=FIF.DOCUMENT,
+            icon=FluentFontIcon("\ue8a5"),
             text='日志',
             onClick=self.onLogBtn,
             selectable=False,
             position=NavigationItemPosition.TOP, )
         self.navigationInterface.addItem(
             routeKey='Help',
-            icon=FIF.HELP,
+            icon=FluentFontIcon("\uea6b"),
             text='帮助',
             onClick=self.onHelpBtn,
             selectable=False,
             position=NavigationItemPosition.BOTTOM, )
-        self.addSubInterface(self.aboutInterface, FIF.INFO, '关于', FIF.INFO, NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.aboutInterface, FluentFontIcon("\ue946"), '关于', FluentFontIcon("\uf167"),
+                             NavigationItemPosition.BOTTOM)
         self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 
         self.splashScreen.finish()

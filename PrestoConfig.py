@@ -3,7 +3,7 @@
 import os
 from enum import Enum
 from qfluentwidgets import qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator, OptionsValidator, \
-    FolderValidator, RangeConfigItem, RangeValidator, EnumSerializer
+    FolderValidator, RangeConfigItem, RangeValidator, EnumSerializer, ConfigValidator
 
 
 class BufSize(Enum):
@@ -50,10 +50,11 @@ class Config(QConfig):
     IsVideo = OptionsConfigItem("Filter", "IsVideo", False, BoolValidator())
     IsApplication = OptionsConfigItem("Filter", "IsApplication", False, BoolValidator())
     IsZipFile = OptionsConfigItem("Filter", "IsZipFile", False, BoolValidator())
-    IsCustom = OptionsConfigItem("Filter", "IsCustom", False, BoolValidator())
+    IsCustomType = OptionsConfigItem("Filter", "IsCustomType", False, BoolValidator())
+    CustomType = ConfigItem("Filter", "CustomTpe", ".db, .lnk", ConfigValidator())
 
 
 YEAR = "2025"
-VERSION = "7.3.0"
+VERSION = "7.3.1"
 cfg = Config()
 qconfig.load(os.path.join(os.path.expanduser('~'), '.Presto', 'config', 'config.json'), cfg)

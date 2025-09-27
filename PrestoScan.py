@@ -16,9 +16,8 @@ from PyQt5.QtGui import QIcon, QCursor, QColor, QPainter
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMainWindow, QAction, QFrame, QLabel, QVBoxLayout, \
     QGraphicsOpacityEffect, QGridLayout, QHBoxLayout
 from qfluentwidgets import RoundMenu, setTheme, Theme, InfoBarPosition, IndeterminateProgressRing, FluentStyleSheet, \
-    InfoBarIcon, isDarkTheme, setThemeColor, BodyLabel, PrimaryPushButton, TextWrap
+    InfoBarIcon, isDarkTheme, setThemeColor, BodyLabel, PrimaryPushButton, TextWrap, FluentFontIconBase
 from qfluentwidgets.components.widgets.info_bar import InfoIconWidget, InfoBarManager, InfoBar
-from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessDialog
 
 
@@ -45,6 +44,12 @@ class Mutex:
                 os.remove('PrestoScan.lockfile')
             except:
                 pass
+
+
+class FluentFontIcon(FluentFontIconBase):
+
+    def path(self, theme=Theme.AUTO):
+        return "Font/SegoeIcons.ttf"
 
 
 class UiErrorDialog:
@@ -414,9 +419,9 @@ class TrayApp:
         self._quit_action = QAction()
         self._tray_icon_menu = RoundMenu("", self.main_window)
         self.exeSubMenu = RoundMenu("快速启动", self._tray_icon_menu)
-        self.exeSubMenu.setIcon(FIF.SEND)
+        self.exeSubMenu.setIcon(FluentFontIcon("\ue724"))
         self.ejectSubMenu = RoundMenu("退出U盘", self._tray_icon_menu)
-        self.ejectSubMenu.setIcon(FIF.EMBED)
+        self.ejectSubMenu.setIcon(FluentFontIcon("\uf847"))
 
         self.tray_icon = QSystemTrayIcon()
         self.tray_icon.setIcon(QIcon(":/icon.png"))
@@ -435,17 +440,17 @@ class TrayApp:
 
     def trayIconActivated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger or reason == QSystemTrayIcon.ActivationReason.Context:
-            self._tray_icon_menu.exec(QCursor.pos())
+            self._tray_icon_menu.exec(self.tray_icon.geometry().center())
 
     def createActions(self):
-        self._launcher_action = QAction(FIF.APPLICATION.icon(), "启动台")
+        self._launcher_action = QAction(FluentFontIcon("\ue74c").icon(), "启动台")
         self._launcher_action.triggered.connect(self.openLauncher)
-        self._setting_action = QAction(FIF.SETTING.icon(), "设置")
+        self._setting_action = QAction(FluentFontIcon("\ue713").icon(), "设置")
         self._setting_action.triggered.connect(self.openSetting)
-        self._help_action = QAction(FIF.HELP.icon(), "帮助")
+        self._help_action = QAction(FluentFontIcon("\uea6b").icon(), "帮助")
         self._help_action.triggered.connect(self.onHelpAction)
 
-        self._quit_action = QAction(FIF.POWER_BUTTON.icon(), "退出")
+        self._quit_action = QAction(FluentFontIcon("\ue7e8").icon(), "退出")
         self._quit_action.triggered.connect(self.quit)
 
     def createTrayIcon(self):

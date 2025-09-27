@@ -16,13 +16,12 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QLabel, QSta
 from qfluentwidgets import setTheme, Theme, isDarkTheme, CheckBox, PrimaryPushButton, PushButton, \
     SubtitleLabel, Pivot, TransparentToolButton, RoundMenu, BodyLabel, CaptionLabel, Action, \
     TransparentPushButton, setThemeColor, PrimarySplitPushButton, ZhDatePicker, MaskDialogBase, \
-    PrimaryDropDownPushButton, MenuAnimationType, setFont, ToolTipFilter, ToolTipPosition, ProgressRing, TextWrap
+    MenuAnimationType, setFont, ToolTipFilter, ToolTipPosition, ProgressRing, TextWrap, FluentFontIconBase
 from qframelesswindow.titlebar import MinimizeButton, CloseButton, MaximizeButton
 from qframelesswindow import TitleBarButton
 from qfluentwidgets.common.style_sheet import FluentStyleSheet, themeColor
 from qfluentwidgets.components.widgets.spin_box import SpinButton, SpinIcon
 from qframelesswindow.utils import startSystemMove
-from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessDialog
 
 
@@ -30,6 +29,12 @@ if sys.platform == 'win32' and sys.getwindowsversion().build >= 22000:
     from FramelessWindow import AcrylicWindow as Window
 else:
     from FramelessWindow import WindowsFramelessWindow as Window
+
+
+class FluentFontIcon(FluentFontIconBase):
+
+    def path(self, theme=Theme.AUTO):
+        return "Font/SegoeIcons.ttf"
 
 
 class TitleBarBase(QWidget):
@@ -351,28 +356,28 @@ class EditMenu(RoundMenu):
 
     def createActions(self):
         self.cutAct = QAction(
-            FIF.CUT.icon(),
+            FluentFontIcon("\ue8c6").icon(),
             "剪切",
             self,
             shortcut="Ctrl+X",
             triggered=self.parent().cut,
         )
         self.copyAct = QAction(
-            FIF.COPY.icon(),
+            FluentFontIcon("\ue8c8").icon(),
             "复制",
             self,
             shortcut="Ctrl+C",
             triggered=self.parent().copy,
         )
         self.pasteAct = QAction(
-            FIF.PASTE.icon(),
+            FluentFontIcon("\ue77f").icon(),
             "粘贴",
             self,
             shortcut="Ctrl+V",
             triggered=self.parent().paste,
         )
         self.cancelAct = QAction(
-            FIF.CANCEL.icon(),
+            FluentFontIcon("\ue7a7").icon(),
             "撤销",
             self,
             shortcut="Ctrl+Z",
@@ -595,7 +600,7 @@ class OptionInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        self.backBtn = TransparentPushButton(FIF.RETURN, '返回', self)
+        self.backBtn = TransparentPushButton(FluentFontIcon("\ue76b"), '返回', self)
         self.backBtn.setFixedWidth(80)
         self.slectAll = CheckBox('全选', self)
         self.slectAll.setTristate(True)
@@ -636,10 +641,10 @@ class OptionInterface(QWidget):
         self.jishu.stateChanged.connect(self.updateSlectAll)
         self.ziliao.stateChanged.connect(self.updateSlectAll)
 
-        self.syncAction = QAction(FIF.SYNC.icon(), '同步 (默认)')
-        self.lowSyncAction = QAction(FIF.LEAF.icon(), '同步 (低占用)')
-        self.latelyCopyAction = QAction(FIF.HISTORY.icon(), '复制 (最近文件)')
-        self.dateCopyAction = QAction(FIF.DATE_TIME.icon(), '复制 (从时间戳)')
+        self.syncAction = QAction(FluentFontIcon("\ue895").icon(), '同步 (默认)')
+        self.lowSyncAction = QAction(FluentFontIcon("\ue8be").icon(), '同步 (低占用)')
+        self.latelyCopyAction = QAction(FluentFontIcon("\ue81c").icon(), '复制 (最近文件)')
+        self.dateCopyAction = QAction(FluentFontIcon("\uec92").icon(), '复制 (从时间戳)')
         self.exeMenu = RoundMenu(parent=self)
         self.exeMenu.addAction(self.syncAction)
         self.exeMenu.addAction(self.lowSyncAction)
@@ -892,11 +897,11 @@ class AskInterface(QWidget):
         self.btnLayout = QHBoxLayout(self)
         self.infoLayout = QHBoxLayout(self)
         self.infoLabel = SubtitleLabel(self.getDriveName() + ' (' + drive + ')')
-        self.infoBtn = TransparentToolButton(FIF.INFO, self)
+        self.infoBtn = TransparentToolButton(FluentFontIcon("\ue946"), self)
         self.infoBtn.setToolTip('驱动器信息')
         self.infoBtn.installEventFilter(ToolTipFilter(self.infoBtn, 0, ToolTipPosition.BOTTOM))
-        self.syncBtn = PrimaryPushButton(FIF.SYNC, '同步', self)
-        self.openBtn = PushButton(FIF.FOLDER, '打开', self)
+        self.syncBtn = PrimaryPushButton(FluentFontIcon("\ue895"), '同步', self)
+        self.openBtn = PushButton(FluentFontIcon("\ue8b7"), '打开', self)
         self.btnLayout.addWidget(self.syncBtn)
         self.btnLayout.addWidget(self.openBtn)
         self.btnLayout.setContentsMargins(20, 10, 20, 10)
@@ -1027,14 +1032,14 @@ class MainWindow(MicaWindow):
         card = ProfileCard(self.getDriveRatio(), self.getDriveName() + ' (' + drive + ')', self.getDriveSize(), menu)
         menu.addWidget(card, selectable=False)
         menu.addSeparator()
-        settingAction = Action(FIF.SETTING, '设置')
+        settingAction = Action(FluentFontIcon("\ue713"), '设置')
         settingAction.triggered.connect(self.openSetting)
         menu.addAction(settingAction)
-        helpAction = Action(FIF.HELP, '帮助')
+        helpAction = Action(FluentFontIcon("\uea6b"), '帮助')
         helpAction.triggered.connect(self.onHelpAction)
         menu.addAction(helpAction)
         menu.addSeparator()
-        menu.addAction(Action(FIF.CLOSE, '关闭'))
+        menu.addAction(Action(FluentFontIcon("\ue711"), '关闭'))
         menu.exec(QPoint(self.x() + self.askInterface.infoBtn.x() - 315, self.y() + self.askInterface.infoBtn.y() - 55))
 
     def openSetting(self):
