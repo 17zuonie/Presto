@@ -223,7 +223,7 @@ class CustomLineEdit(LineEdit):
         if len(s) > 11:
             return False
         for char in s:
-            if not ('a' <= char <= 'z' or '0' <= char <= '9' or char == '.'):
+            if not ('a' <= char <= 'z' or '0' <= char <= '9' or char == '.' or char == '_'):
                 return False
         return True
 
@@ -2193,9 +2193,7 @@ class MSFluentWindow(FluentWindowBase):
     def addSubInterface(self, interface: QWidget, icon: Union[QIcon, str], text: str,
                         selectedIcon=None, position=NavigationItemPosition.TOP,
                         isTransparent=False) -> NavigationBarPushButton:
-        """ add sub interface, the object name of `interface` should be set already
-        before calling this method
-
+        """
         Parameters
         ----------
         interface: QWidget
@@ -2214,7 +2212,7 @@ class MSFluentWindow(FluentWindowBase):
             the position of navigation item
         """
         if not interface.objectName():
-            raise ValueError("The object name of `interface` can't be empty string.")
+            sys.exit()
 
         interface.setProperty("isStackedTransparent", isTransparent)
         self.stackedWidget.addWidget(interface)
