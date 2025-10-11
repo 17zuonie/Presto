@@ -221,6 +221,6 @@ class Config(QConfig):
 
 
 YEAR = "2025"
-VERSION = "7.3.4"
+VERSION = "7.3.5"
 cfg = Config()
 qconfig.load(os.path.join(os.path.expanduser('~'), '.Presto', 'config', 'config.json'), cfg)

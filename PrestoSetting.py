@@ -3,16 +3,14 @@
 import os
 import sys
 import darkdetect
-import subprocess
 import portalocker
 import PrestoResource
 from enum import Enum
 from typing import Union
-from webbrowser import open as WebOpen
 from PrestoConfig import cfg, BufSize, VERSION, YEAR
 from pygetwindow import getWindowsWithTitle as GetWindow
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QRectF, QEasingCurve, QEvent
-from PyQt5.QtGui import QColor, QIcon, QPainter, QTextCursor, QPainterPath, QCursor
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QRectF, QEasingCurve, QEvent, QUrl, QDir
+from PyQt5.QtGui import QColor, QIcon, QPainter, QTextCursor, QPainterPath, QCursor, QDesktopServices
 from PyQt5.QtWidgets import QFrame, QApplication, QWidget, QHBoxLayout, QFileDialog, QLabel, QVBoxLayout, \
     QPushButton, QButtonGroup, QTextBrowser, QTextEdit, QSizePolicy, QLineEdit, QSpinBox, QScrollArea, \
     QScroller, QAction
@@ -1291,7 +1289,7 @@ class InformationBar(QFrame):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def __initLayout(self):
         self.hBoxLayout.setContentsMargins(6, 6, 6, 6)
@@ -1605,7 +1603,10 @@ class SettingInterface(SmoothScrollArea):
             self.sourceGroup.adjustSize()
 
     def onCloudCard(self):
-        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", "./")
+        if os.path.exists(r"\\10.181.201.188\云上春晖"):
+            folder = QFileDialog.getExistingDirectory(self, "选择文件夹", r"\\10.181.201.188\云上春晖")
+        else:
+            folder = QFileDialog.getExistingDirectory(self, "选择文件夹", QDir.homePath())
         if not folder or cfg.get(cfg.sourceFolder) == folder:
             return
 
@@ -1679,7 +1680,7 @@ class SettingInterface(SmoothScrollArea):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def __connectSignalToSlot(self):
         self.optionSourceCard.comboBox.currentTextChanged.connect(self.onOptionSourceCard)
@@ -1711,9 +1712,9 @@ class DetailMessageBox(MessageBoxBase):
         self.githubBtn.setIcon(FluentFontIcon("\ue71b"))
         self.websiteBtn.setIcon(FluentFontIcon("\ue774"))
         self.onlineDocBtn.setIcon(FluentFontIcon("\ue8a5"))
-        self.githubBtn.clicked.connect(lambda: WebOpen("https://github.com/sudo0015/Presto"))
-        self.websiteBtn.clicked.connect(lambda: WebOpen("https://sudo0015.github.io/"))
-        self.onlineDocBtn.clicked.connect(lambda: WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
+        self.githubBtn.setUrl("https://github.com/sudo0015/Presto")
+        self.websiteBtn.setUrl("https://sudo0015.github.io/")
+        self.onlineDocBtn.setUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
 
         self.btnLayout = QHBoxLayout(self)
         self.btnLayout.addWidget(self.githubBtn)
@@ -1822,7 +1823,7 @@ class CustomTypeMessageBox(MessageBoxBase):
         self.countLabel = BodyLabel("0 个项目", self)
         self.addBtn = HyperlinkButton(self)
         self.addBtn.setText("添加文件类型")
-        self.addBtn.setIcon(FluentFontIcon("\ue109"))
+        self.addBtn.setIcon(FluentFontIcon("\ue710"))
         self.addBtn.setFixedWidth(148)
         self.addBtn.clicked.connect(self.onAddBtn)
         self.topLayout = QHBoxLayout(self)
@@ -1927,6 +1928,77 @@ class CustomTypeMessageBox(MessageBoxBase):
         return ', '.join(types)
 
 
+class WelcomeMessageBox(MessageBoxBase):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.sourceFolder = ''
+        self.titleLabel = SubtitleLabel("欢迎使用 Presto", self)
+        self.contentLabel = BodyLabel(self)
+        self.contentLabel.setText(
+            "Presto 是一款用于文件同步/复制的桌面应用。为方便同学们拷课件而设计。具有简洁、快速、高效、可靠等特性。\n"
+            "\n设置云上春晖班级文件夹以继续。"
+        )
+        self.contentLabel.setWordWrap(True)
+        self.cloudCard = PushSettingCard(
+            '选择文件夹',
+            FluentFontIcon("\ue753"),
+            "云上春晖",
+            "未设置",
+            self
+        )
+        self.cloudCard.clicked.connect(self.onCloudCard)
+        self.helpBtn = HyperlinkButton(self)
+        self.helpBtn.setIcon(FluentFontIcon("\uea6b"))
+        self.helpBtn.setText("查看完整帮助")
+        self.helpBtn.clicked.connect(self.onHelpBtn)
+
+        self.vBoxLayout = QVBoxLayout(self)
+        self.vBoxLayout.setContentsMargins(16, 0, 16, 0)
+        self.vBoxLayout.setSpacing(18)
+        self.vBoxLayout.addWidget(self.contentLabel)
+        self.vBoxLayout.addWidget(self.cloudCard)
+        self.vBoxLayout.addWidget(self.helpBtn, alignment=Qt.AlignHCenter)
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addLayout(self.vBoxLayout)
+        self.viewLayout.addStretch()
+
+        self.yesButton.setText("保存")
+        self.cancelButton.setText("跳过")
+
+        self.widget.setMinimumSize(500, 380)
+
+    def onCloudCard(self):
+        if os.path.exists(r"\\10.181.201.188\云上春晖"):
+            folder = QFileDialog.getExistingDirectory(self, "选择文件夹", r"\\10.181.201.188\云上春晖")
+        else:
+            folder = QFileDialog.getExistingDirectory(self, "选择文件夹", QDir.homePath())
+        if not folder:
+            return
+
+        self.cloudCard.setContent(folder)
+        self.sourceFolder = folder
+        cfg.set(cfg.sourceFolder, folder)
+        cfg.set(cfg.yuwenFolder, os.path.join(folder, '语文'))
+        cfg.set(cfg.shuxueFolder, os.path.join(folder, '数学'))
+        cfg.set(cfg.yingyuFolder, os.path.join(folder, '英语'))
+        cfg.set(cfg.wuliFolder, os.path.join(folder, '物理'))
+        cfg.set(cfg.huaxueFolder, os.path.join(folder, '化学'))
+        cfg.set(cfg.shengwuFolder, os.path.join(folder, '生物'))
+        cfg.set(cfg.zhengzhiFolder, os.path.join(folder, '政治'))
+        cfg.set(cfg.lishiFolder, os.path.join(folder, '历史'))
+        cfg.set(cfg.diliFolder, os.path.join(folder, '地理'))
+        cfg.set(cfg.jishuFolder, os.path.join(folder, '技术'))
+        cfg.set(cfg.ziliaoFolder, os.path.join(folder, '资料'))
+
+    def onHelpBtn(self):
+        if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
+            os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
+        else:
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
+
+
 class AboutInterface(SmoothScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -2007,19 +2079,19 @@ class AboutInterface(SmoothScrollArea):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def onAboutBSAction(self):
         if os.path.exists(os.path.abspath("./Doc/AboutBugStudio.html")):
             os.startfile(os.path.abspath("./Doc/AboutBugStudio.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/guan-yu-%20BUG%20STUDIO.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/guan-yu-%20BUG%20STUDIO.html"))
 
     def __connectSignalToSlot(self):
         self.aboutESCard.clicked.connect(self.onAboutESCardClicked)
         self.aboutBSCard.clicked.connect(self.onAboutBSAction)
         self.helpCard.clicked.connect(self.onHelpAction)
-        self.feedbackCard.clicked.connect(lambda: WebOpen("https://github.com/sudo0015/Presto/issues"))
+        self.feedbackCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/sudo0015/Presto/issues")))
 
 
 class TitleBarBase(QWidget):
@@ -2256,12 +2328,12 @@ class Main(MSFluentWindow):
         self.splashScreen = SplashScreen(self.windowIcon(), self)
         self.splashScreen.raise_()
 
-        self.homeInterface = SettingInterface(self)
+        self.settingInterface = SettingInterface(self)
         self.aboutInterface = AboutInterface(self)
-        self.homeInterface.setObjectName('homeInterface')
+        self.settingInterface.setObjectName('settingInterface')
         self.aboutInterface.setObjectName('aboutInterface')
         self.addSubInterface(
-            self.homeInterface,
+            self.settingInterface,
             FluentFontIcon("\ue713"),
             '设置',
             FluentFontIcon("\uf8b0")
@@ -2285,18 +2357,28 @@ class Main(MSFluentWindow):
         self.addSubInterface(
             self.aboutInterface,
             FluentFontIcon("\ue946"),
-            '关于', FluentFontIcon("\uf167"),
+            '关于',
+            FluentFontIcon("\uf167"),
             NavigationItemPosition.BOTTOM
         )
-        self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
+        self.navigationInterface.setCurrentItem(self.settingInterface.objectName())
 
         self.splashScreen.finish()
+        QTimer.singleShot(300, self.checkFirstRun)
+
+    def checkFirstRun(self):
+        if not os.path.exists(os.path.join(os.path.expanduser('~'), '.Presto', 'config', 'config.json')):
+            w = WelcomeMessageBox(self.window())
+            if w.exec():
+                if w.sourceFolder:
+                    self.settingInterface.cloudCard.setContent(w.sourceFolder)
+                    self.settingInterface.customFolderCard.updateContent()
 
     def onHelpBtn(self):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def onLogBtn(self):
         try:
@@ -2311,10 +2393,12 @@ if __name__ == '__main__':
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
         if darkdetect.isDark():
             setTheme(Theme.DARK)
         else:
             setTheme(Theme.LIGHT)
+
         app = QApplication(sys.argv)
         w = Main()
         w.show()

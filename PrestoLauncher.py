@@ -7,11 +7,10 @@ import subprocess
 import portalocker
 import PrestoResource
 from typing import Union, Iterable
-from webbrowser import open as WebOpen
 from psutil import process_iter, Process
 from pygetwindow import getWindowsWithTitle as GetWindow
-from PyQt5.QtCore import Qt, QPoint, pyqtSignal, QEvent, QTimer, QRectF
-from PyQt5.QtGui import QColor, QPainter, QIcon, QPainterPath, QCursor
+from PyQt5.QtCore import Qt, QPoint, pyqtSignal, QEvent, QTimer, QRectF, QUrl
+from PyQt5.QtGui import QColor, QPainter, QIcon, QPainterPath, QCursor, QDesktopServices
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QCompleter, QFileDialog, \
     QLineEdit, QAction, QFrame
 from qfluentwidgets import setTheme, Theme, isDarkTheme, setThemeColor, FluentStyleSheet, TransparentToolButton, \
@@ -973,7 +972,8 @@ class Window(MicaWindow):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
+
         self.close()
         sys.exit()
 

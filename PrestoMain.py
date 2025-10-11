@@ -676,7 +676,7 @@ class MainWindow(MicaWindow):
         self.detailLabel = BodyLabel(self)
         self.detailLabel.setText(self.displayText)
         self.detailLabel.setTextColor(QColor(114, 114, 114))
-        self.showDetailBtn = PrimaryPushButton(FluentFontIcon("\ue73a"), '选项', self)
+        self.showDetailBtn = PrimaryPushButton(FluentFontIcon("\ue946"), '信息', self)
         self.cancelBtn = PushButton(FluentFontIcon("\ue711"), '取消', self)
         self.pauseBtn = PushButton(FluentFontIcon("\ue769"), '暂停', self)
         self.showDetailBtn.clicked.connect(self.onShowDetailBtn)

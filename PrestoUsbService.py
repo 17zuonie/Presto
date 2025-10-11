@@ -5,12 +5,11 @@ import sys
 import subprocess
 import darkdetect
 import PrestoResource
-from webbrowser import open as WebOpen
 from win32file import GetDiskFreeSpace
 from win32api import GetVolumeInformation
-from PyQt5.QtGui import QIcon, QColor, QPainterPath, QPainter
+from PyQt5.QtGui import QIcon, QColor, QPainterPath, QPainter, QDesktopServices
 from PyQt5.QtCore import Qt, QPoint, QTimer, QDate, QRectF, QPropertyAnimation, QParallelAnimationGroup, \
-    QEasingCurve, QEvent, pyqtSignal
+    QEasingCurve, QEvent, pyqtSignal, QUrl
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QLabel, QStackedWidget, QWidget, QGridLayout, \
     QFrame, QPushButton, QSpinBox, QLineEdit, QAction
 from qfluentwidgets import setTheme, Theme, isDarkTheme, CheckBox, PrimaryPushButton, PushButton, SubtitleLabel, \
@@ -1069,7 +1068,7 @@ class MainWindow(MicaWindow):
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def onOpenBtn(self):
         os.startfile(drive)

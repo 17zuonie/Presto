@@ -9,10 +9,9 @@ import portalocker
 import PrestoResource
 from PrestoConfig import cfg
 from psutil import disk_partitions
-from webbrowser import open as WebOpen
 from win32api import GetVolumeInformation
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPropertyAnimation, QEvent, QRunnable, QThreadPool, QObject
-from PyQt5.QtGui import QIcon, QColor, QPainter
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPropertyAnimation, QEvent, QRunnable, QThreadPool, QObject, QUrl
+from PyQt5.QtGui import QIcon, QColor, QPainter, QDesktopServices
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMainWindow, QAction, QFrame, QLabel, QVBoxLayout, \
     QGraphicsOpacityEffect, QGridLayout, QHBoxLayout
 from qfluentwidgets import RoundMenu, setTheme, Theme, InfoBarPosition, IndeterminateProgressRing, FluentStyleSheet, \
@@ -503,7 +502,7 @@ class TrayApp:
         if os.path.exists(os.path.abspath("./Doc/PrestoHelp.html")):
             os.startfile(os.path.abspath("./Doc/PrestoHelp.html"))
         else:
-            WebOpen("https://sudo0015.github.io/post/Presto%20-bang-zhu.html")
+            QDesktopServices.openUrl(QUrl("https://sudo0015.github.io/post/Presto%20-bang-zhu.html"))
 
     def updateDriveActions(self):
         for action in self.exeSubMenu.actions():
