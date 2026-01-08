@@ -3,6 +3,7 @@
 import os
 import sys
 import darkdetect
+import subprocess
 import portalocker
 import PrestoResource
 from enum import Enum
@@ -1603,7 +1604,24 @@ class SettingInterface(SmoothScrollArea):
             self.sourceGroup.adjustSize()
 
     def onCloudCard(self):
-        if os.path.exists(r"\\10.181.201.188\云上春晖"):
+        try:
+            cmd = ['ping', '-n', '1', '-w', '1000', '10.181.201.188']
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+
+            if result.returncode == 0:
+                self.showFolderDialog(True)
+            else:
+                self.showFolderDialog(False)
+        except:
+            self.showFolderDialog(False)
+
+    def showFolderDialog(self, exists):
+        if exists:
             folder = QFileDialog.getExistingDirectory(self, "选择文件夹", r"\\10.181.201.188\云上春晖")
         else:
             folder = QFileDialog.getExistingDirectory(self, "选择文件夹", QDir.homePath())
@@ -1625,7 +1643,7 @@ class SettingInterface(SmoothScrollArea):
         cfg.set(cfg.ziliaoFolder, os.path.join(folder, '资料'))
         self.customFolderCard.updateContent()
 
-    def clearFinished(self):
+    def onClearFinished(self):
         self.clearCacheThread.exit(0)
         self.clearCard.contentLabel.setText(self.getSize())
         self.clearCard.button.setText('已清除')
@@ -1645,7 +1663,7 @@ class SettingInterface(SmoothScrollArea):
             self.clearCard.button.setDisabled(True)
             self.clearCacheThread = ClearCache()
             self.clearCacheThread.start()
-            self.clearCacheThread.isFinished.connect(self.clearFinished)
+            self.clearCacheThread.isFinished.connect(self.onClearFinished)
 
     def recoverConfig(self):
         w = MessageBox(
