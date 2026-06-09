@@ -597,10 +597,10 @@ class OptionInterface(QWidget):
 
         self.backBtn = TransparentPushButton(FluentFontIcon("\ue76b"), '返回', self)
         self.backBtn.setFixedWidth(80)
-        self.slectAll = CheckBox('全选', self)
-        self.slectAll.setTristate(True)
-        self.slectAll.setCheckState(Qt.Checked)
-        self.slectAll.stateChanged.connect(self.onSlectAll)
+        self.selectAll = CheckBox('全选', self)
+        self.selectAll.setTristate(True)
+        self.selectAll.setCheckState(Qt.Checked)
+        self.selectAll.stateChanged.connect(self.onSlectAll)
 
         self.yuwen = CheckBox('语文', self)
         self.shuxue = CheckBox('数学', self)
@@ -673,7 +673,7 @@ class OptionInterface(QWidget):
         self.checkLayout.setContentsMargins(30, 0, 10, 20)
 
         self.checkLayout.addWidget(self.backBtn, 0, 0, 1, 1)
-        self.checkLayout.addWidget(self.slectAll, 0, 2, 1, 1)
+        self.checkLayout.addWidget(self.selectAll, 0, 2, 1, 1)
         self.checkLayout.addWidget(self.yuwen, 1, 0, 1, 1)
         self.checkLayout.addWidget(self.shuxue, 1, 1, 1, 1)
         self.checkLayout.addWidget(self.yingyu, 1, 2, 1, 1)
@@ -696,7 +696,7 @@ class OptionInterface(QWidget):
 
         self.aniGroup = QParallelAnimationGroup(self)
         self.addAniWidget(self.backBtn, self.backBtn.geometry())
-        self.addAniWidget(self.slectAll, self.slectAll.geometry())
+        self.addAniWidget(self.selectAll, self.selectAll.geometry())
         self.addAniWidget(self.yuwen, self.yuwen.geometry())
         self.addAniWidget(self.shuxue, self.shuxue.geometry())
         self.addAniWidget(self.yingyu, self.yingyu.geometry())
@@ -745,7 +745,7 @@ class OptionInterface(QWidget):
         return numTemp
 
     def onSlectAll(self):
-        if self.slectAll.checkState() == Qt.Checked:
+        if self.selectAll.checkState() == Qt.Checked:
             self.yuwen.setChecked(True)
             self.shuxue.setChecked(True)
             self.yingyu.setChecked(True)
@@ -758,7 +758,7 @@ class OptionInterface(QWidget):
             self.jishu.setChecked(True)
             self.ziliao.setChecked(True)
 
-        elif self.slectAll.checkState() == Qt.Unchecked:
+        elif self.selectAll.checkState() == Qt.Unchecked:
             self.yuwen.setChecked(False)
             self.shuxue.setChecked(False)
             self.yingyu.setChecked(False)
@@ -771,9 +771,9 @@ class OptionInterface(QWidget):
             self.jishu.setChecked(False)
             self.ziliao.setChecked(False)
 
-        elif self.slectAll.checkState() == Qt.PartiallyChecked:
+        elif self.selectAll.checkState() == Qt.PartiallyChecked:
             if self.num() == 0:
-                self.slectAll.setCheckState(Qt.Checked)
+                self.selectAll.setCheckState(Qt.Checked)
                 self.yuwen.setChecked(True)
                 self.shuxue.setChecked(True)
                 self.yingyu.setChecked(True)
@@ -787,7 +787,7 @@ class OptionInterface(QWidget):
                 self.ziliao.setChecked(True)
 
             elif self.num() == 11:
-                self.slectAll.setCheckState(Qt.Unchecked)
+                self.selectAll.setCheckState(Qt.Unchecked)
                 self.yuwen.setChecked(False)
                 self.shuxue.setChecked(False)
                 self.yingyu.setChecked(False)
@@ -802,11 +802,11 @@ class OptionInterface(QWidget):
 
     def updateSlectAll(self):
         if self.num() == 11:
-            self.slectAll.setCheckState(Qt.Checked)
+            self.selectAll.setCheckState(Qt.Checked)
         elif self.num() == 0:
-            self.slectAll.setCheckState(Qt.Unchecked)
+            self.selectAll.setCheckState(Qt.Unchecked)
         else:
-            self.slectAll.setCheckState(Qt.PartiallyChecked)
+            self.selectAll.setCheckState(Qt.PartiallyChecked)
 
     def onSyncAction(self, commandOption, isDelete, mode):
         self.isClicked = True
