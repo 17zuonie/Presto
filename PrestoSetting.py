@@ -1796,10 +1796,7 @@ class WelcomeMessageBox(MessageBoxBase):
         self.sourceFolder = ''
         self.titleLabel = SubtitleLabel("欢迎使用 Presto", self)
         self.contentLabel = BodyLabel(self)
-        self.contentLabel.setText(
-            "Presto 是一款用于文件同步/复制的桌面应用。为方便同学们拷课件而设计。具有简洁、快速、高效、可靠等特性。\n"
-            "\n设置云上春晖班级文件夹以继续。"
-        )
+        self.contentLabel.setText("\n设置云上春晖班级文件夹以继续。")
         self.contentLabel.setWordWrap(True)
         self.cloudCard = PushSettingCard(
             '选择文件夹',
@@ -1828,7 +1825,7 @@ class WelcomeMessageBox(MessageBoxBase):
         self.yesButton.setText("保存")
         self.cancelButton.setText("跳过")
 
-        self.widget.setMinimumSize(500, 380)
+        self.widget.setMinimumSize(500, 300)
 
     def onCloudCard(self):
         if os.path.exists(r"\\10.181.201.188\云上春晖"):
