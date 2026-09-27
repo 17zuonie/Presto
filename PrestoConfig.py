@@ -15,6 +15,13 @@ class BufSize(Enum):
     _1024 = "1 GB"
 
 
+class OptionalFolderValidator(FolderValidator):
+    def correct(self, value):
+        if not value:
+            return ""
+        return super().correct(value)
+
+
 class Config(QConfig):
     AutoRun = ConfigItem("MainWindow", "AutoRun", True, BoolValidator())
     Notify = ConfigItem("MainWindow", "Notify", True, BoolValidator())
@@ -26,18 +33,18 @@ class Config(QConfig):
     dpiScale = OptionsConfigItem("MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]),
                                  restart=True)
 
-    sourceFolder = ConfigItem("Folders", "SourceFolder", "", FolderValidator())
-    yuwenFolder = ConfigItem("Folders", "Yuwen", "", FolderValidator())
-    shuxueFolder = ConfigItem("Folders", "Shuxue", "", FolderValidator())
-    yingyuFolder = ConfigItem("Folders", "Yingyu", "", FolderValidator())
-    wuliFolder = ConfigItem("Folders", "Wuli", "", FolderValidator())
-    huaxueFolder = ConfigItem("Folders", "Huaxue", "", FolderValidator())
-    shengwuFolder = ConfigItem("Folders", "Shengwu", "", FolderValidator())
-    zhengzhiFolder = ConfigItem("Folders", "Zhengzhi", "", FolderValidator())
-    lishiFolder = ConfigItem("Folders", "Lishi", "", FolderValidator())
-    diliFolder = ConfigItem("Folders", "Dili", "", FolderValidator())
-    jishuFolder = ConfigItem("Folders", "Jishu", "", FolderValidator())
-    ziliaoFolder = ConfigItem("Folders", "Ziliao", "", FolderValidator())
+    sourceFolder = ConfigItem("Folders", "SourceFolder", "", OptionalFolderValidator())
+    yuwenFolder = ConfigItem("Folders", "Yuwen", "", OptionalFolderValidator())
+    shuxueFolder = ConfigItem("Folders", "Shuxue", "", OptionalFolderValidator())
+    yingyuFolder = ConfigItem("Folders", "Yingyu", "", OptionalFolderValidator())
+    wuliFolder = ConfigItem("Folders", "Wuli", "", OptionalFolderValidator())
+    huaxueFolder = ConfigItem("Folders", "Huaxue", "", OptionalFolderValidator())
+    shengwuFolder = ConfigItem("Folders", "Shengwu", "", OptionalFolderValidator())
+    zhengzhiFolder = ConfigItem("Folders", "Zhengzhi", "", OptionalFolderValidator())
+    lishiFolder = ConfigItem("Folders", "Lishi", "", OptionalFolderValidator())
+    diliFolder = ConfigItem("Folders", "Dili", "", OptionalFolderValidator())
+    jishuFolder = ConfigItem("Folders", "Jishu", "", OptionalFolderValidator())
+    ziliaoFolder = ConfigItem("Folders", "Ziliao", "", OptionalFolderValidator())
 
     IsSkipEmptyDir = OptionsConfigItem("Filter", "IsSkipEmptyDir", False, BoolValidator())
     IsSizeFilter = OptionsConfigItem("Filter", "IsSizeFilter", False, BoolValidator())
@@ -56,6 +63,6 @@ class Config(QConfig):
 
 
 YEAR = "2026"
-VERSION = "v7.4.2"
+VERSION = "v7.5.0"
 cfg = Config()
 qconfig.load(os.path.join(os.path.expanduser('~'), '.Presto', 'config', 'config.json'), cfg)

@@ -3,14 +3,14 @@
 import os
 import sys
 import darkdetect
-import subprocess
+import threading
 import portalocker
 import PrestoResource
 from enum import Enum
 from typing import Union
 from PrestoConfig import cfg, BufSize, VERSION
 from pygetwindow import getWindowsWithTitle as GetWindow
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QRectF, QEasingCurve, QEvent, QUrl, QDir
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QObject, QRectF, QEasingCurve, QEvent, QUrl, QDir
 from PyQt5.QtGui import QColor, QIcon, QPainter, QTextCursor, QPainterPath, QCursor, QDesktopServices
 from PyQt5.QtWidgets import QFrame, QApplication, QWidget, QHBoxLayout, QFileDialog, QLabel, QVBoxLayout, QGridLayout, \
     QPushButton, QTextEdit, QSizePolicy, QLineEdit, QSpinBox, QScrollArea, QScroller, QAction
@@ -24,6 +24,7 @@ from qfluentwidgets import NavigationItemPosition, SubtitleLabel, MessageBox, Ex
 from qfluentwidgets.components.widgets.line_edit import LineEditButton
 from qfluentwidgets.components.widgets.menu import MenuAnimationType, RoundMenu, CheckableMenu, MenuIndicatorType
 from qfluentwidgets.components.widgets.spin_box import SpinButton, SpinIcon
+from qfluentwidgets.components.widgets.progress_ring import IndeterminateProgressRing
 from qfluentwidgets.window.fluent_window import FluentWindowBase
 from qframelesswindow.titlebar import MinimizeButton, CloseButton, MaximizeButton
 from qframelesswindow import TitleBarButton
@@ -497,6 +498,45 @@ class PrimaryPushSettingCard(PushSettingCard):
     def __init__(self, text, icon, title, content=None, parent=None):
         super().__init__(text, icon, title, content, parent)
         self.button.setObjectName('primaryButton')
+
+
+class IndeterminateProgressRingButton(PushButton):
+
+    def _postInit(self):
+        self.ring = IndeterminateProgressRing(self, start=False)
+        self.ring.setFixedSize(16, 16)
+        self.ring.setStrokeWidth(2)
+        self.ring.hide()
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self.ring.move((self.width() - self.ring.width()) // 2,
+                       (self.height() - self.ring.height()) // 2)
+
+    def setBusy(self, busy: bool):
+        self.ring.setVisible(busy)
+        if busy:
+            self._text = self.text()
+            self.setText('')
+            self.setFixedWidth(self.width())
+            self.ring.start()
+            self.ring.raise_()
+        else:
+            self.ring.stop()
+            if hasattr(self, '_text'):
+                self.setText(self._text)
+        self.setDisabled(busy)
+
+
+class IndeterminateProgressRingSettingCard(SettingCard):
+    clicked = pyqtSignal()
+
+    def __init__(self, text, icon, title, content=None, parent=None):
+        super().__init__(icon, title, content, parent)
+        self.button = IndeterminateProgressRingButton(text, self)
+        self.hBoxLayout.addWidget(self.button, 0, Qt.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+        self.button.clicked.connect(self.clicked)
 
 
 class SpinBoxSettingCard(SettingCard):
@@ -1025,7 +1065,7 @@ class FolderItem(QWidget):
         super().__init__(parent=parent)
         self.config = configItem
         self.titleLabel = QLabel(title, self)
-        self.contentLabel = QLabel(self.config.value, self)
+        self.contentLabel = QLabel(self.config.value or "未设置", self)
         self.setFixedHeight(56)
         if darkdetect.isDark():
             self.titleLabel.setStyleSheet("font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC'; padding: 0; border: none; background-color: transparent; color: white;")
@@ -1232,6 +1272,20 @@ class InformationBar(QFrame):
         painter.drawRoundedRect(rect, 6, 6)
 
 
+class UncPathChecker(QObject):
+    finished = pyqtSignal(bool)
+
+    def check(self, path):
+        threading.Thread(target=self._run, args=(path,), daemon=True).start()
+
+    def _run(self, path):
+        try:
+            ok = os.path.exists(path)
+        except Exception:
+            ok = False
+        self.finished.emit(ok)
+
+
 class ClearCache(QThread):
     isFinished = pyqtSignal(bool)
 
@@ -1301,11 +1355,11 @@ class SettingInterface(SmoothScrollArea):
             configItem=cfg.Notify,
             parent=self.actGroup
         )
-        self.cloudCard = PushSettingCard(
+        self.cloudCard = IndeterminateProgressRingSettingCard(
             '选择文件夹',
             FluentFontIcon("\ue753"),
             "云上春晖",
-            cfg.get(cfg.sourceFolder),
+            cfg.get(cfg.sourceFolder) or "未设置",
             self.sourceGroup
         )
         self.customFolderCard = CustomFolderListSettingCard(
@@ -1488,21 +1542,32 @@ class SettingInterface(SmoothScrollArea):
             self.sourceGroup.adjustSize()
 
     def onCloudCard(self):
-        try:
-            cmd = ['ping', '-n', '1', '-w', '1000', '10.181.201.188']
-            result = subprocess.run(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
+        self._uncDecided = False
+        self.cloudCard.button.setBusy(True)
 
-            if result.returncode == 0:
-                self.showFolderDialog(True)
-            else:
-                self.showFolderDialog(False)
-        except:
-            self.showFolderDialog(False)
+        self._uncChecker = UncPathChecker()
+        self._uncChecker.finished.connect(self.onUncChecked)
+        self._uncChecker.check(r"\\10.181.201.188\云上春晖")
+
+        self._uncWatchdog = QTimer(self)
+        self._uncWatchdog.setSingleShot(True)
+        self._uncWatchdog.timeout.connect(self.onUncTimeout)
+        self._uncWatchdog.start(2000)
+
+    def onUncChecked(self, exists):
+        if self._uncDecided:
+            return
+        self._uncDecided = True
+        self._uncWatchdog.stop()
+        self.cloudCard.button.setBusy(False)
+        self.showFolderDialog(exists)
+
+    def onUncTimeout(self):
+        if self._uncDecided:
+            return
+        self._uncDecided = True
+        self.cloudCard.button.setBusy(False)
+        self.showFolderDialog(False)
 
     def showFolderDialog(self, exists):
         if exists:
@@ -1798,11 +1863,11 @@ class WelcomeMessageBox(MessageBoxBase):
         self.contentLabel = BodyLabel(self)
         self.contentLabel.setText("\n设置云上春晖班级文件夹以继续。")
         self.contentLabel.setWordWrap(True)
-        self.cloudCard = PushSettingCard(
+        self.cloudCard = IndeterminateProgressRingSettingCard(
             '选择文件夹',
             FluentFontIcon("\ue753"),
             "云上春晖",
-            "未设置",
+            cfg.get(cfg.sourceFolder) or "未设置",
             self
         )
         self.cloudCard.clicked.connect(self.onCloudCard)
@@ -1828,7 +1893,35 @@ class WelcomeMessageBox(MessageBoxBase):
         self.widget.setMinimumSize(500, 300)
 
     def onCloudCard(self):
-        if os.path.exists(r"\\10.181.201.188\云上春晖"):
+        self._uncDecided = False
+        self.cloudCard.button.setBusy(True)
+
+        self._uncChecker = UncPathChecker()
+        self._uncChecker.finished.connect(self.onUncChecked)
+        self._uncChecker.check(r"\\10.181.201.188\云上春晖")
+
+        self._uncWatchdog = QTimer(self)
+        self._uncWatchdog.setSingleShot(True)
+        self._uncWatchdog.timeout.connect(self.onUncTimeout)
+        self._uncWatchdog.start(2000)
+
+    def onUncChecked(self, exists):
+        if self._uncDecided:
+            return
+        self._uncDecided = True
+        self._uncWatchdog.stop()
+        self.cloudCard.button.setBusy(False)
+        self.showFolderDialog(exists)
+
+    def onUncTimeout(self):
+        if self._uncDecided:
+            return
+        self._uncDecided = True
+        self.cloudCard.button.setBusy(False)
+        self.showFolderDialog(False)
+
+    def showFolderDialog(self, exists):
+        if exists:
             folder = QFileDialog.getExistingDirectory(self, "选择文件夹", r"\\10.181.201.188\云上春晖")
         else:
             folder = QFileDialog.getExistingDirectory(self, "选择文件夹", QDir.homePath())
@@ -2086,10 +2179,10 @@ class Main(MSFluentWindow):
         self.navigationInterface.setCurrentItem(self.settingInterface.objectName())
 
         self.splashScreen.finish()
-        QTimer.singleShot(300, self.checkFirstRun)
+        QTimer.singleShot(300, self.checkSourceFolder)
 
-    def checkFirstRun(self):
-        if not os.path.exists(os.path.join(os.path.expanduser('~'), '.Presto', 'config', 'config.json')):
+    def checkSourceFolder(self):
+        if not cfg.get(cfg.sourceFolder):
             w = WelcomeMessageBox(self.window())
             if w.exec():
                 if w.sourceFolder:
