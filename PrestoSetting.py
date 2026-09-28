@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Union
 from PrestoConfig import cfg, BufSize, VERSION
 from pygetwindow import getWindowsWithTitle as GetWindow
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QObject, QRectF, QEasingCurve, QEvent, QUrl, QDir
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QThread, QObject, QRectF, QEasingCurve, QEvent, QUrl, QDir, QElapsedTimer
 from PyQt5.QtGui import QColor, QIcon, QPainter, QTextCursor, QPainterPath, QCursor, QDesktopServices
 from PyQt5.QtWidgets import QFrame, QApplication, QWidget, QHBoxLayout, QFileDialog, QLabel, QVBoxLayout, QGridLayout, \
     QPushButton, QTextEdit, QSizePolicy, QLineEdit, QSpinBox, QScrollArea, QScroller, QAction
@@ -534,6 +534,7 @@ class IndeterminateProgressRingSettingCard(SettingCard):
     def __init__(self, text, icon, title, content=None, parent=None):
         super().__init__(icon, title, content, parent)
         self.button = IndeterminateProgressRingButton(text, self)
+        self.button.setFixedWidth(102)
         self.hBoxLayout.addWidget(self.button, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(16)
         self.button.clicked.connect(self.clicked)
@@ -1293,20 +1294,26 @@ class ClearCache(QThread):
         super(ClearCache, self).__init__()
 
     def run(self):
+        success = True
         if os.path.exists("./Log"):
             try:
-                for item in os.listdir("./Log"):
-                    item_path = os.path.join("./Log", item)
-                    if os.path.isfile(item_path):
+                items = os.listdir("./Log")
+            except Exception:
+                items = []
+                success = False
+            for item in items:
+                item_path = os.path.join("./Log", item)
+                if os.path.isfile(item_path):
+                    try:
                         os.remove(item_path)
-            except:
-                pass
+                    except Exception:
+                        success = False
         if os.path.exists("FastCopy2.ini"):
             try:
                 os.remove("FastCopy2.ini")
-            except:
-                pass
-        self.isFinished.emit(True)
+            except Exception:
+                success = False
+        self.isFinished.emit(success)
 
 
 class SettingInterface(SmoothScrollArea):
@@ -1316,6 +1323,7 @@ class SettingInterface(SmoothScrollArea):
         super().__init__(parent=parent)
         self.scrollWidget = QWidget()
         self.stateTooltip = None
+        self.clearTimer = QElapsedTimer()
         self.expandLayout = ExpandLayout(self.scrollWidget)
         self.enableTransparentBackground()
         self.settingLabel = QLabel("设置", self)
@@ -1406,7 +1414,7 @@ class SettingInterface(SmoothScrollArea):
             content='排除或包含指定类型的文件',
             parent=self.filterGroup
         )
-        self.clearCard = PushSettingCard(
+        self.clearCard = IndeterminateProgressRingSettingCard(
             '清除',
             FluentFontIcon("\uea99"),
             '清除缓存',
@@ -1592,11 +1600,33 @@ class SettingInterface(SmoothScrollArea):
         cfg.set(cfg.ziliaoFolder, os.path.join(folder, '资料'))
         self.customFolderCard.updateContent()
 
-    def onClearFinished(self):
+    def onClearFinished(self, success: bool):
+        delay = max(0, 1000 - self.clearTimer.elapsed())
+        QTimer.singleShot(delay, lambda: self.onClearSettled(success))
+
+    def onClearSettled(self, success: bool):
         self.clearCard.contentLabel.setText(self.getSize())
-        self.clearCard.button.setText('已清除')
-        QTimer.singleShot(2000, lambda: self.clearCard.button.setText('清除'))
-        self.clearCard.button.setDisabled(False)
+        self.clearCard.button.setBusy(False)
+        if success:
+            InfoBar.success(
+                title='已清除缓存',
+                content='',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self.window()
+            )
+        else:
+            InfoBar.error(
+                title='清除缓存失败',
+                content='',
+                orient=Qt.Horizontal,
+                isClosable=False,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self.window()
+            )
 
     def clearCache(self):
         w = MessageBox(
@@ -1607,11 +1637,11 @@ class SettingInterface(SmoothScrollArea):
         w.yesButton.setText('确定')
         w.cancelButton.setText('取消')
         if w.exec():
-            self.clearCard.button.setText('清除中')
-            self.clearCard.button.setDisabled(True)
+            self.clearCard.button.setBusy(True)
+            self.clearTimer.restart()
             self.clearCacheThread = ClearCache()
-            self.clearCacheThread.start()
             self.clearCacheThread.isFinished.connect(self.onClearFinished)
+            self.clearCacheThread.start()
 
     def recoverConfig(self):
         w = MessageBox(
