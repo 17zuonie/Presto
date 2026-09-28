@@ -486,13 +486,30 @@ class DeleteThread(QThread):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.isRunning = True
+        self.isPaused = False
         self.process = None
 
     def stop(self):
         self.isRunning = False
+        if self.process:
+            self.process.terminate()
+
+    def pause(self):
+        self.isPaused = True
+        if self.process:
+            self.process.terminate()
+
+    def resume(self):
+        self.isPaused = False
 
     def run(self):
-        if self.isRunning:
+        while self.isRunning:
+            while self.isPaused and self.isRunning:
+                self.msleep(100)
+
+            if not self.isRunning:
+                return
+
             args = ("fcp.exe /cmd=delete " +
                     f"/bufsize={buf} /log=FALSE " +
                     f'/force_start={concurrentProcess} "{destFolder}"'
@@ -506,10 +523,12 @@ class DeleteThread(QThread):
                 if w.exec():
                     sys.exit()
 
+            if not self.isRunning:
+                return
+            if self.isPaused:
+                continue
+
             self.deleteFinished.emit(True)
-            return
-        else:
-            self.process.terminate()
             return
 
 
@@ -518,17 +537,33 @@ class SyncThread(QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.is_paused = bool(0)
         self.progress_value = int(0)
         self.isRunning = True
+        self.isPaused = False
         self.process = None
 
     def stop(self):
         self.isRunning = False
+        if self.process:
+            self.process.terminate()
+
+    def pause(self):
+        self.isPaused = True
+        if self.process:
+            self.process.terminate()
+
+    def resume(self):
+        self.isPaused = False
 
     def run(self):
         global currentTask
         while self.isRunning:
+            while self.isPaused and self.isRunning:
+                self.msleep(100)
+
+            if not self.isRunning:
+                return
+
             if taskList or currentTask:
                 if currentTask == 0:
                     currentTask = taskList.pop(0)
@@ -568,6 +603,11 @@ class SyncThread(QThread):
                     if w.exec():
                         sys.exit()
 
+                if not self.isRunning:
+                    return
+                if self.isPaused:
+                    continue
+
                 self.progress_value = int((taskNum - len(taskList)) / taskNum * 100)
                 self.valueChange.emit(self.progress_value)
 
@@ -579,9 +619,6 @@ class SyncThread(QThread):
                 self.progress_value = -1
                 self.valueChange.emit(self.progress_value)
                 return
-        else:
-            self.process.terminate()
-            return
 
 
 class EjectThread(QThread):
@@ -596,25 +633,23 @@ class EjectThread(QThread):
         self.isRunning = False
 
     def run(self):
-        if self.isRunning:
-            for i in range(2):
-                if os.path.exists('RemoveDrive.exe'):
-                    self.exitCode = subprocess.call(["RemoveDrive.exe", drive, '-f'], shell=True)
-                else:
-                    w = ErrorDialog("错误", "核心文件缺失，请尝试重新安装。Presto 将退出。")
-                    w.yesButton.setText("确定")
-                    if w.exec():
-                        sys.exit()
+        if not self.isRunning:
+            return
 
-                if self.exitCode == 0:
-                    self.ejectFinished.emit(True)
-                    break
+        for i in range(2):
+            if os.path.exists('RemoveDrive.exe'):
+                self.exitCode = subprocess.call(["RemoveDrive.exe", drive, '-f'], shell=True)
             else:
-                self.ejectFinished.emit(False)
-            return
-        else:
-            self.terminate()
-            return
+                w = ErrorDialog("错误", "核心文件缺失，请尝试重新安装。Presto 将退出。")
+                w.yesButton.setText("确定")
+                if w.exec():
+                    sys.exit()
+
+            if self.exitCode == 0:
+                break
+
+        if self.isRunning:
+            self.ejectFinished.emit(self.exitCode == 0)
 
 
 class MainWindow(MicaWindow):
@@ -734,6 +769,12 @@ class MainWindow(MicaWindow):
             self.taskbarProgress.show()
 
     def closeEvent(self, event):
+        self.deleteThread.stop()
+        self.syncThread.stop()
+        self.ejectThread.stop()
+        self.deleteThread.wait()
+        self.syncThread.wait()
+        self.ejectThread.wait()
         super(Window, self).closeEvent(event)
 
     def resizeEvent(self, event):
@@ -761,7 +802,6 @@ class MainWindow(MicaWindow):
             self.deleteThread.start()
 
     def deleteThreadFinished(self):
-        self.deleteThread.quit()
         self.deleteThreadRunning = False
         self.setupSyncThread()
         self.startSyncThread()
@@ -826,7 +866,7 @@ class MainWindow(MicaWindow):
 
     def setSyncValue(self):
         if self.syncThread.progress_value == -1:
-            self.syncThread.terminate()
+            self.syncThread.wait()
             self.syncThreadRunning = False
             self.taskbarProgress.setVisible(False)
             if cfg.Notify.value:
@@ -872,7 +912,7 @@ class MainWindow(MicaWindow):
 
     def ejectThreadFinished(self):
         self.ejectThread.isRunning = False
-        self.ejectThread.terminate()
+        self.ejectThread.wait()
         self.ejectThreadRunning = False
 
         if self.ejectThread.exitCode == 0:
@@ -901,8 +941,6 @@ class MainWindow(MicaWindow):
         self.syncThread.stop()
         self.deleteThreadRunning = False
         self.syncThreadRunning = False
-        self.deleteThread.quit()
-        self.syncThread.quit()
 
         self.killSubprocess()
         sys.exit()
@@ -952,15 +990,13 @@ class MainWindow(MicaWindow):
                 self.inProgressBar.setPaused(False)
                 self.progressBar.setPaused(False)
                 self.taskbarProgress.setPaused(False)
-                self.setupDeleteThread()
-                self.startDeleteThread()
+                self.deleteThread.resume()
             elif self.syncThreadRunning:
                 self.statusLabel.setText("正在同步")
                 self.inProgressBar.setPaused(False)
                 self.progressBar.setPaused(False)
                 self.taskbarProgress.setPaused(False)
-                self.setupSyncThread()
-                self.startSyncThread()
+                self.syncThread.resume()
         else:
             """pause"""
             self.pauseBtn.setText("继续")
@@ -971,15 +1007,13 @@ class MainWindow(MicaWindow):
                 self.inProgressBar.setPaused(True)
                 self.progressBar.setPaused(True)
                 self.taskbarProgress.setPaused(True)
-                self.deleteThread.isRunning = False
-                self.deleteThread.terminate()
+                self.deleteThread.pause()
                 self.killSubprocess()
             elif self.syncThreadRunning:
                 self.inProgressBar.setPaused(True)
                 self.progressBar.setPaused(True)
                 self.taskbarProgress.setPaused(True)
-                self.syncThread.isRunning = True
-                self.syncThread.terminate()
+                self.syncThread.pause()
                 self.killSubprocess()
 
     def Quit(self):

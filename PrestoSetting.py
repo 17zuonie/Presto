@@ -2,8 +2,8 @@
 
 import os
 import sys
-import darkdetect
 import threading
+import darkdetect
 import portalocker
 import PrestoResource
 from enum import Enum
@@ -1593,7 +1593,6 @@ class SettingInterface(SmoothScrollArea):
         self.customFolderCard.updateContent()
 
     def onClearFinished(self):
-        self.clearCacheThread.exit(0)
         self.clearCard.contentLabel.setText(self.getSize())
         self.clearCard.button.setText('已清除')
         QTimer.singleShot(2000, lambda: self.clearCard.button.setText('清除'))
